@@ -4,7 +4,7 @@ An interactive general equilibrium model exploring how automation, market struct
 
 **[Try the live model →](https://claude.ai/public/artifacts/87463911-87e4-455b-8a43-9ffc65f68259)**
 
-**[Read the blog post →](https://continuations.com)** *(update with actual URL)*
+**[Read the blog post →](https://continuations.com/modeling-the-agi-economy)**
 
 ## The Question
 
