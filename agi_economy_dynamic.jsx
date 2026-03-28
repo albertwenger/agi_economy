@@ -25,11 +25,16 @@ const K_0 = 1.0;
 
 function equilibrium(alpha, sigma, N, t, A, K_total, kFracs) {
   const mu = (N * DEMAND_EPS) / Math.max(N * DEMAND_EPS - 1, 0.01);
-  const L = Math.max(1.0 * (1 - LAMBDA_TAX * t), 0.01);
+  // Labor supply responds to both tax disincentive AND wage level
+  // When alpha is high (lots of automation), effective wages fall, reducing labor supply
+  const taxEffect = 1 - LAMBDA_TAX * t;
+  const wageEffect = Math.pow(1 - alpha, 0.3); // labor supply falls as automation rises
+  const L = Math.max(1.0 * taxEffect * wageEffect, 0.01);
   const rho = (sigma - 1) / sigma;
 
   let Y_pot, s_L;
   if (Math.abs(rho) < 0.005) {
+    // Cobb-Douglas limit (sigma ≈ 1)
     Y_pot = Math.pow(A * K_total, alpha) * Math.pow(L, 1 - alpha);
     s_L = 1 - alpha;
   } else {
@@ -38,6 +43,14 @@ function equilibrium(alpha, sigma, N, t, A, K_total, kFracs) {
     const denom = Math.max(tK + tL, 1e-10);
     Y_pot = Math.pow(denom, 1 / rho);
     s_L = tL / denom;
+    // Smooth blend near sigma=1 to avoid discontinuity
+    if (Math.abs(rho) < 0.05) {
+      const blend = Math.abs(rho) / 0.05; // 0 at rho=0, 1 at |rho|=0.05
+      const Y_cd = Math.pow(A * K_total, alpha) * Math.pow(L, 1 - alpha);
+      const s_L_cd = 1 - alpha;
+      Y_pot = Y_cd * (1 - blend) + Y_pot * blend;
+      s_L = s_L_cd * (1 - blend) + s_L * blend;
+    }
   }
 
   const Y = Y_pot / Math.pow(mu, DWL_EXP);
@@ -50,9 +63,11 @@ function equilibrium(alpha, sigma, N, t, A, K_total, kFracs) {
   const pretax = kFracs.map(f => wagePer + capitalPool * f);
   const posttax = pretax.map(y => (1 - t) * y + t * meanY);
 
-  // Price index: μ / productivity, where productivity = Y / (K + L)
-  const productivity = Y / (K_total + L);
-  const priceRaw = mu / productivity;
+  // Price index: markup × unit cost, where unit cost ∝ 1/TFP
+  // TFP = Y_pot / f(K,L) — use Y_pot before markup for clean separation
+  const tfp = Y_pot / Math.max(Math.pow(K_total, alpha) * Math.pow(L, 1 - alpha), 1e-10);
+  const productivity = tfp;
+  const priceRaw = mu / Math.max(tfp, 1e-10);
 
   return { Y, mu, laborShare, L, wagePool, capitalPool, pretax, posttax, priceRaw, meanY, productivity };
 }
@@ -70,7 +85,7 @@ function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread }) {
   // Savings rate by decile: base rate × (1 + spread × rank/10)
   const sBase = 0.12;
   const savingsRates = Array.from({ length: N_DECILES }, (_, i) =>
-    sBase * (1 + savingsSpread * ((i + 1) / N_DECILES))
+    Math.min(sBase * (1 + savingsSpread * ((i + 1) / N_DECILES)), 0.40) // Cap at 40%
   );
 
   const history = [];
@@ -93,7 +108,7 @@ function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread }) {
       if (tot <= 0) return 0;
       let sum = 0;
       for (let i = 0; i < n; i++) sum += s[i] * (2 * (i + 1) - n - 1);
-      return sum / (n * tot);
+      return Math.min(Math.max(sum / (n * tot), 0), 1);
     };
 
     const rec = {
