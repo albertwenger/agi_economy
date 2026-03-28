@@ -47,11 +47,11 @@ Inspired by [Moll, Rachel & Restrepo (2022)](https://benjaminmoll.com/wp-content
 
 ```
 k_i ∝ i^θ          (initial distribution, θ controls concentration)
-k_{i,t+1} = (1−δ)·k_{i,t} + s_i · y_net_{i,t}    (accumulation)
-s_i = s_base · (1 + spread · i/10)                  (differential savings)
+k_{i,t+1} = (1−δ)·k_{i,t} + s_i · y_net_{i,t}    (accumulation, δ=0.05)
+s_i = min(s_base · (1 + spread · i/10), 0.40)       (differential savings, capped at 40%)
 ```
 
-Richer households save a larger fraction of income, so capital ownership concentrates endogenously over time — the Piketty r > g mechanism emerges from the model rather than being assumed.
+Capital depreciates at δ=5% per period. Richer households save a larger fraction of income (capped at 40% to prevent explosive accumulation in extreme scenarios), so capital ownership concentrates endogenously over time — the Piketty r > g mechanism emerges from the model rather than being assumed.
 
 ### 4. Negative Income Tax / UBI
 
@@ -61,7 +61,7 @@ Budget-balanced redistribution:
 y_net = (1−t)·y + t·ȳ
 ```
 
-Below-mean earners receive transfers; above-mean earners pay. Labor supply responds to the tax rate with elasticity λ=0.25, capturing disincentive effects.
+Below-mean earners receive transfers; above-mean earners pay. Labor supply responds to both the tax rate (elasticity λ=0.25) and the automation share (as more tasks are automated, effective wages fall, reducing labor supply). This captures the compound effect of high automation + high redistribution on labor participation.
 
 ### Price Index
 
