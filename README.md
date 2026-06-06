@@ -2,7 +2,7 @@
 
 An interactive general equilibrium model exploring how automation, market structure, and redistribution policy shape economic outcomes in an AI-driven economy.
 
-**[Try the live model →](https://claude.ai/public/artifacts/87463911-87e4-455b-8a43-9ffc65f68259)**
+**[Try the live model →](https://albertwenger.github.io/agi_economy/)**
 
 **[Read the blog post →](https://continuations.com/modeling-the-agi-economy)**
 
@@ -125,7 +125,9 @@ The model synthesizes ideas from several strands of the literature:
 
 This is a first-cut model for building intuition, not a calibrated forecasting tool. Known limitations and potential extensions include:
 
-- **Flat tax**: The NIT taxes all income uniformly. Progressive rates or differential treatment of capital vs. labor income would better capture real policy options.
+- **Flat tax, no evasion**: The NIT taxes all income uniformly and assumes full compliance. Progressive rates, differential treatment of capital vs. labor income, and capital's greater ability to avoid taxation (offshore structuring, tokenized/digital assets) would better capture real policy options and would tend to amplify inequality beyond what the model shows.
+- **σ-isolated labor supply**: Labor supply responds to the tax rate (elasticity λ=0.25) and to a proxy for automation `(1−α)`, but not to the *realized* equilibrium wage, which embeds the substitutability σ. As a result, high substitutability and high redistribution do not compound on labor supply as strongly as a fully wage-responsive labor-supply curve (solving the wage↔labor fixed point) would imply.
+- **Small deadweight-loss exponent**: Market power enters chiefly as a *distributional* distortion — it compresses the labor share (`s_L/μ`) and routes rents to capital — while the efficiency loss is deliberately mild (`Y/μ^0.1`). Under duopoly this means output stays high; a larger exponent would model more aggressive monopoly output distortions.
 - **No capital ownership broadening**: Sovereign wealth funds, stakeholder ownership, and broad-based equity participation are arguably a third policy dimension not yet modeled.
 - **Exogenous market structure**: AI may itself drive concentration through economies of scale in training and data. Endogenizing N as a function of AI capability would capture this self-reinforcing dynamic.
 - **No Baumol bottlenecks**: The model doesn't capture sector-level heterogeneity in automation difficulty, which Aghion-Jones-Jones emphasize as a constraint on aggregate growth.
