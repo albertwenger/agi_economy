@@ -11,7 +11,7 @@ import {
 
 const DEMAND_EPS = 2.0;
 const LAMBDA_TAX = 0.25;
-const DWL_EXP = 0.1;
+const DWL_EXP = 0.7;
 const DEPRECIATION = 0.05;
 const T_PERIODS = 40;
 const N_DECILES = 10;
@@ -149,16 +149,29 @@ function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread, gamma })
     }
   }
 
-  // Normalize price index so P_0 = 1
-  const p0 = history[0].priceRaw;
-  history.forEach(h => { h.price = h.priceRaw / p0; });
-
-  // Compute real incomes (nominal / price)
+  // Price index, split into two lines, both normalized so the COMPETITIVE price
+  // (marginal cost = 1/Z) is 1 at t=0:
+  //   priceComp   = Z_0 / Z_t           — what prices would be under competition
+  //   priceActual = μ · priceComp       — actual markup-inclusive price
+  // The gap between them is the productivity gain captured as profit instead of
+  // passed to consumers as lower prices. (The markup μ no longer cancels out, as
+  // it did in the old single normalized index.)
+  const z0 = history[0].productivity;
   history.forEach(h => {
-    h.d1Real = h.d1Post / h.price;
-    h.d5Real = h.d5Post / h.price;
-    h.d10Real = h.d10Post / h.price;
-    h.realOutputPC = h.Y / (N_DECILES * h.price);
+    h.priceComp = z0 / Math.max(h.productivity, 1e-10);
+    h.priceActual = h.mu * h.priceComp;
+    h.price = h.priceActual; // headline "price level" = the actual price people pay
+  });
+
+  // Real purchasing power. This is a one-good economy, so each decile's real
+  // consumption is simply its share of real output — post-tax income already IS
+  // real purchasing power. We do NOT deflate by the price index (doing so double-
+  // counted productivity, since output already rises with it).
+  history.forEach(h => {
+    h.d1Real = h.d1Post;
+    h.d5Real = h.d5Post;
+    h.d10Real = h.d10Post;
+    h.realOutputPC = h.Y / N_DECILES;
   });
 
   return history;
@@ -279,6 +292,8 @@ export default function AGIEconomyDynamic() {
     period: h.period,
     output: +h.Y.toFixed(4),
     price: +h.price.toFixed(4),
+    priceComp: +h.priceComp.toFixed(4),
+    priceActual: +h.priceActual.toFixed(4),
     giniPre: +h.giniPre.toFixed(4),
     giniPost: +h.giniPost.toFixed(4),
     laborShare: +(h.laborShare * 100).toFixed(2),
@@ -445,7 +460,7 @@ export default function AGIEconomyDynamic() {
         <div className="grid grid-cols-6 gap-1.5 mb-4">
           <Metric label="Output" v0={h0.Y} vT={hT.Y}
             fmt={v => v.toFixed(2)} good={() => hT.Y >= h0.Y ? "good" : "warn"} />
-          <Metric label="Price Index" v0={1} vT={hT.price}
+          <Metric label="Price Index" v0={h0.price} vT={hT.price}
             fmt={v => v.toFixed(2)} good={priceStatus} />
           <Metric label="Labor Share" v0={h0.laborShare} vT={hT.laborShare}
             fmt={v => `${(v * 100).toFixed(1)}%`}
@@ -495,8 +510,10 @@ export default function AGIEconomyDynamic() {
                 <Legend wrapperStyle={{ fontSize: 9 }} />
                 <Line yAxisId="L" type="monotone" dataKey="output" stroke={CHART_COLORS.output}
                   strokeWidth={2.5} dot={false} name="Output" />
-                <Line yAxisId="R" type="monotone" dataKey="price" stroke={CHART_COLORS.price}
-                  strokeWidth={2.5} dot={false} name="Price Index" strokeDasharray="6 3" />
+                <Line yAxisId="R" type="monotone" dataKey="priceActual" stroke={CHART_COLORS.price}
+                  strokeWidth={2.5} dot={false} name="Price (actual)" strokeDasharray="6 3" />
+                <Line yAxisId="R" type="monotone" dataKey="priceComp" stroke="#c98a8a"
+                  strokeWidth={1.5} dot={false} name="Price (if competitive)" strokeDasharray="2 2" />
                 <ReferenceLine yAxisId="R" y={1} stroke="#9ca3af" strokeDasharray="3 3" strokeWidth={1} />
               </ComposedChart>
             </ResponsiveContainer>
@@ -532,7 +549,7 @@ export default function AGIEconomyDynamic() {
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="rounded p-3" style={{ backgroundColor: "white", border: "1px solid #e5e7eb" }}>
             <h2 className="text-[9px] uppercase tracking-widest mb-2 font-bold" style={{ color: "#6b7280" }}>
-              Real Purchasing Power Over Time (Post-tax Income ÷ Price Index)
+              Real Purchasing Power Over Time (Post-tax Share of Real Output)
             </h2>
             <ResponsiveContainer width="100%" height={210}>
               <LineChart data={tsData}>
@@ -609,13 +626,13 @@ export default function AGIEconomyDynamic() {
           <div className="grid grid-cols-2 gap-4 text-[10px] leading-relaxed" style={{ color: "#4b5563" }}>
             <div>
               <p className="font-bold mb-0.5" style={{ color: "#1a1a2e" }}>Production (CES task framework)</p>
-              <p>Y = [α<sup>1/σ</sup>(A·K<sup>γ</sup>)<sup>ρ</sup> + (1−α)<sup>1/σ</sup>L<sup>ρ</sup>]<sup>1/ρ</sup> / μ<sup>0.1</sup>. Automation α ramps logistically from 30% toward target. AI productivity A grows at rate g<sub>A</sub>. Physical bottleneck γ&lt;1 imposes diminishing returns to capital (a fixed energy/compute/land factor); γ=1 is an AK economy that has no balanced path when σ&gt;1.</p>
+              <p>Y = [α<sup>1/σ</sup>(A·K<sup>γ</sup>)<sup>ρ</sup> + (1−α)<sup>1/σ</sup>L<sup>ρ</sup>]<sup>1/ρ</sup> / μ<sup>0.7</sup>. Automation α ramps logistically from 30% toward target. AI productivity A grows at rate g<sub>A</sub>. Physical bottleneck γ&lt;1 imposes diminishing returns to capital (a fixed energy/compute/land factor); γ=1 is an AK economy that has no balanced path when σ&gt;1.</p>
 
               <p className="font-bold mt-1.5 mb-0.5" style={{ color: "#1a1a2e" }}>Market Power (Cournot)</p>
-              <p>Markup μ = Nε/(Nε−1), ε=2. Effective labor share = s<sub>L</sub>/μ. DWL factor μ<sup>0.1</sup> reduces output below potential. Profit share (1−1/μ)·Y flows to capital owners.</p>
+              <p>Markup μ = Nε/(Nε−1), ε=2. Effective labor share = s<sub>L</sub>/μ. DWL factor μ<sup>0.7</sup> reduces output below potential — competition grows the real pie. Profit share (1−1/μ)·Y flows to capital owners by holdings.</p>
 
-              <p className="font-bold mt-1.5 mb-0.5" style={{ color: "#1a1a2e" }}>Price Index</p>
-              <p>P<sub>t</sub> = μ / (Y<sub>t</sub> / (K<sub>t</sub>+L<sub>t</sub>)), normalized to P<sub>0</sub>=1. Falls with productivity growth; inflated by markup. Real income = nominal / P<sub>t</sub>.</p>
+              <p className="font-bold mt-1.5 mb-0.5" style={{ color: "#1a1a2e" }}>Prices &amp; Real Income</p>
+              <p>Two price lines, both normalized so the competitive price (marginal cost ∝ 1/productivity) = 1 at t=0: <em>competitive</em> = 1/Z and <em>actual</em> = μ/Z. Their gap is the productivity gain captured as profit rather than passed to consumers. Real purchasing power is each decile's post-tax share of real output (one good ⇒ no separate deflation).</p>
             </div>
             <div>
               <p className="font-bold mb-0.5" style={{ color: "#1a1a2e" }}>Capital Dynamics</p>
@@ -625,7 +642,7 @@ export default function AGIEconomyDynamic() {
               <p>y<sup>net</sup> = (1−t)·y + t·ȳ. Budget-balanced. Labor response: L = 1−λt, λ=0.25.</p>
 
               <p className="font-bold mt-1.5 mb-0.5" style={{ color: "#1a1a2e" }}>Key Mechanisms</p>
-              <p>Competition (↑N) → lower μ → lower prices + less rent extraction. NIT (↑t) → compresses income → slows differential capital accumulation. Both needed to prevent compounding inequality.</p>
+              <p>Competition (↑N) → lower μ → productivity gains reach consumers as lower prices (not profits), less rent extraction, and a larger real pie (less DWL). NIT (↑t) → gives displaced labor a claim on output and slows differential capital accumulation. Competition sets the size of the pie; redistribution sets who shares it — both are needed.</p>
             </div>
           </div>
         </div>

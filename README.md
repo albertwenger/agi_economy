@@ -40,9 +40,9 @@ N symmetric firms compete with demand elasticity ε=2, yielding markup:
 μ = Nε / (Nε − 1)
 ```
 
-The markup compresses the effective labor share (workers receive s_L/μ of output) and creates deadweight loss (Y_actual = Y_potential / μ^0.1). Monopoly rents (1 − 1/μ)·Y flow to capital owners proportional to their capital holdings.
+The markup compresses the effective labor share (workers receive s_L/μ of output) and creates deadweight loss (Y_actual = Y_potential / μ^0.7). Monopoly rents (1 − 1/μ)·Y flow to capital owners proportional to their capital holdings.
 
-This captures the core policy insight: competition determines whether AI cost savings reach consumers as lower prices or get captured as profits. N is treated as exogenous because it is subject to policy (antitrust, regulation, open standards).
+This captures the core policy insight: **without competition, instead of prices falling, profits rise.** A given productivity gain shows up as a falling unit cost; the markup decides whether that saving reaches consumers as a lower price (competition, μ→1) or is captured as profit that accrues to concentrated capital ownership (monopoly). The deadweight-loss exponent of 0.7 means monopoly also meaningfully shrinks the real pie — so competition does double duty: it both passes gains to consumers *and* makes the total output larger. N is treated as exogenous because it is subject to policy (antitrust, regulation, open standards).
 
 ### 3. Capital Dynamics (Heterogeneous Agents)
 
@@ -66,13 +66,18 @@ y_net = (1−t)·y + t·ȳ
 
 Below-mean earners receive transfers; above-mean earners pay. Labor supply responds to both the tax rate (elasticity λ=0.25) and the automation share (as more tasks are automated, effective wages fall, reducing labor supply). This captures the compound effect of high automation + high redistribution on labor participation.
 
-### Price Index
+### Prices and Real Purchasing Power
+
+The model shows two price lines, both normalized so the competitive price is 1 at t=0:
 
 ```
-P_t = μ / productivity_t,  normalized to P_0 = 1
+P_competitive,t = 1 / Z_t          (marginal cost; what prices would be under competition)
+P_actual,t      = μ · 1 / Z_t      (the markup-inclusive price people actually pay)
 ```
 
-Falls with productivity growth; inflated by markup. Real purchasing power = nominal income / P_t. This is the key metric for the "everything gets cheap" thesis.
+where Z_t is productivity. Both fall as productivity grows ("everything gets cheap"), but the **gap between them is the productivity gain captured as profit rather than passed to consumers** — it widens with the markup and vanishes under competition. (On a log axis the two lines sit a constant distance μ apart.)
+
+Real purchasing power is **not** computed by deflating income by this price index. In a one-good economy each decile's real consumption is simply its share of real output, so post-tax income already *is* real purchasing power — deflating it again would double-count productivity. Competition raises everyone's real income through two channels instead: a larger real pie (less deadweight loss) and a smaller share of output diverted to monopoly rents.
 
 ## Parameters
 
@@ -94,14 +99,20 @@ Five presets illustrate the range of outcomes:
 | Preset | α | σ | N | t | Key Outcome |
 |--------|---|---|---|---|-------------|
 | **Today's Trajectory** | 50% | 1.0 | 12 | 10% | Moderate growth, slowly rising inequality |
-| **AI Dystopia** | 90% | 1.8 | 2 | 0% | Output soars but bottom decile loses purchasing power |
-| **AI Utopia** | 90% | 1.8 | 30 | 30% | Broadly shared prosperity, falling prices |
-| **Redistribution Only** | 90% | 1.8 | 2 | 40% | Gini compressed but transfers subsidize monopoly rents |
-| **Competition Only** | 90% | 1.8 | 30 | 0% | Prices fall but capital concentration still compounds |
+| **AI Dystopia** | 90% | 1.8 | 2 | 0% | Output soars but rents flow to capital; the bottom decile is left far behind |
+| **AI Utopia** | 90% | 1.8 | 30 | 30% | Broadly shared prosperity — a large, cheap pie and a fair share of it |
+| **Redistribution Only** | 90% | 1.8 | 2 | 40% | Inequality compressed, but the pie is shrunk and skimmed by monopoly rents |
+| **Competition Only** | 90% | 1.8 | 30 | 0% | Bigger, cheaper pie, but the unwaged bottom decile is excluded from it |
 
 ## Key Finding
 
-Neither competition nor redistribution alone is sufficient. Competition without redistribution drives prices down but leaves capital ownership concentrated. Redistribution without competition subsidizes monopoly rents. The combination produces broadly shared prosperity across a wide range of parameter settings.
+Neither competition nor redistribution alone is sufficient — they do different jobs, and you need both. **Competition sets the size of the pie; redistribution sets who shares it.**
+
+- *Competition without redistribution* produces a large, cheap-goods economy, but a fully automated one in which displaced workers have no wage and little capital — they are excluded from the abundance. Inequality stays extreme.
+- *Redistribution without competition* gives everyone a claim on output, but it is a claim on a pie that monopoly has shrunk (deadweight loss) and skimmed (rents to concentrated capital). The bottom decile's real income is a fraction of what it could be.
+- *The combination* gives displaced workers both a share and a large pie to share: in the model, adding competition to a fully-redistributive economy still multiplies the bottom decile's real income several-fold, while redistribution is what compresses inequality in the first place.
+
+This is the intuition that without competition, productivity gains become profits rather than lower prices — income flows to the owners of capital while labor, its wages driven down or automated away, is left unable to afford the abundance unless redistribution gives it a claim and competition keeps that claim valuable.
 
 ## Academic References
 
