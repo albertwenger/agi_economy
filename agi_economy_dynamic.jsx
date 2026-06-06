@@ -23,7 +23,7 @@ const K_0 = 1.0;
 // SINGLE-PERIOD EQUILIBRIUM
 // ═══════════════════════════════════════════════════════════════
 
-function equilibrium(alpha, sigma, N, t, A, K_total, kFracs) {
+function equilibrium(alpha, sigma, N, t, A, K_total, kFracs, gamma) {
   const mu = (N * DEMAND_EPS) / Math.max(N * DEMAND_EPS - 1, 0.01);
   // Labor supply responds to both tax disincentive AND wage level
   // When alpha is high (lots of automation), effective wages fall, reducing labor supply
@@ -31,14 +31,20 @@ function equilibrium(alpha, sigma, N, t, A, K_total, kFracs) {
   const wageEffect = Math.pow(1 - alpha, 0.3); // labor supply falls as automation rises
   const L = Math.max(1.0 * taxEffect * wageEffect, 0.01);
   const rho = (sigma - 1) / sigma;
+  // Physical bottleneck: diminishing returns to accumulated capital (gamma < 1),
+  // representing a fixed complementary factor (energy / compute / land). Under
+  // gamma = 1 and sigma > 1 the model is an AK economy with no balanced path
+  // (Uzawa), so capital and output explode super-exponentially; gamma < 1 restores
+  // a stationary capital–output ratio and keeps magnitudes finite for any sigma.
+  const Kcap = Math.pow(K_total, gamma);
 
   let Y_pot, s_L;
   if (Math.abs(rho) < 0.005) {
     // Cobb-Douglas limit (sigma ≈ 1)
-    Y_pot = Math.pow(A * K_total, alpha) * Math.pow(L, 1 - alpha);
+    Y_pot = Math.pow(A * Kcap, alpha) * Math.pow(L, 1 - alpha);
     s_L = 1 - alpha;
   } else {
-    const tK = Math.pow(Math.max(alpha, 1e-8), 1 / sigma) * Math.pow(A * K_total, rho);
+    const tK = Math.pow(Math.max(alpha, 1e-8), 1 / sigma) * Math.pow(A * Kcap, rho);
     const tL = Math.pow(Math.max(1 - alpha, 1e-8), 1 / sigma) * Math.pow(L, rho);
     const denom = Math.max(tK + tL, 1e-10);
     Y_pot = Math.pow(denom, 1 / rho);
@@ -46,7 +52,7 @@ function equilibrium(alpha, sigma, N, t, A, K_total, kFracs) {
     // Smooth blend near sigma=1 to avoid discontinuity
     if (Math.abs(rho) < 0.05) {
       const blend = Math.abs(rho) / 0.05; // 0 at rho=0, 1 at |rho|=0.05
-      const Y_cd = Math.pow(A * K_total, alpha) * Math.pow(L, 1 - alpha);
+      const Y_cd = Math.pow(A * Kcap, alpha) * Math.pow(L, 1 - alpha);
       const s_L_cd = 1 - alpha;
       Y_pot = Y_cd * (1 - blend) + Y_pot * blend;
       s_L = s_L_cd * (1 - blend) + s_L * blend;
@@ -65,7 +71,7 @@ function equilibrium(alpha, sigma, N, t, A, K_total, kFracs) {
 
   // Price index: markup × unit cost, where unit cost ∝ 1/TFP
   // TFP = Y_pot / f(K,L) — use Y_pot before markup for clean separation
-  const tfp = Y_pot / Math.max(Math.pow(K_total, alpha) * Math.pow(L, 1 - alpha), 1e-10);
+  const tfp = Y_pot / Math.max(Math.pow(Kcap, alpha) * Math.pow(L, 1 - alpha), 1e-10);
   const productivity = tfp;
   const priceRaw = mu / Math.max(tfp, 1e-10);
 
@@ -76,7 +82,7 @@ function equilibrium(alpha, sigma, N, t, A, K_total, kFracs) {
 // DYNAMIC SIMULATION
 // ═══════════════════════════════════════════════════════════════
 
-function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread }) {
+function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread, gamma }) {
   // Initial capital distribution
   const kRaw0 = Array.from({ length: N_DECILES }, (_, i) => Math.pow(i + 1, theta));
   const kSum0 = kRaw0.reduce((a, b) => a + b, 0);
@@ -99,7 +105,7 @@ function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread }) {
     const K_total = kAbs.reduce((a, b) => a + b, 0);
     const kFracs = kAbs.map(k => k / Math.max(K_total, 1e-10));
 
-    const eq = equilibrium(alpha_t, sigma, N, t, A_t, K_total, kFracs);
+    const eq = equilibrium(alpha_t, sigma, N, t, A_t, K_total, kFracs, gamma);
 
     // Gini computation
     const giniCalc = (arr) => {
@@ -164,15 +170,15 @@ function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread }) {
 
 const PRESETS = [
   { id: "base", label: "Today's Trajectory", icon: "◉",
-    alphaTarget: 0.50, sigma: 1.0, N: 12, t: 0.10, theta: 2.5, gA: 0.02, savingsSpread: 1.5 },
+    alphaTarget: 0.50, sigma: 1.0, N: 12, t: 0.10, theta: 2.5, gA: 0.02, savingsSpread: 1.5, gamma: 0.90 },
   { id: "dys",  label: "AI Dystopia",       icon: "▼",
-    alphaTarget: 0.90, sigma: 1.8, N: 2,  t: 0.00, theta: 3.5, gA: 0.08, savingsSpread: 2.5 },
+    alphaTarget: 0.90, sigma: 1.8, N: 2,  t: 0.00, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.90 },
   { id: "uto",  label: "AI Utopia",         icon: "▲",
-    alphaTarget: 0.90, sigma: 1.8, N: 30, t: 0.30, theta: 3.5, gA: 0.08, savingsSpread: 2.5 },
+    alphaTarget: 0.90, sigma: 1.8, N: 30, t: 0.30, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.90 },
   { id: "ubi",  label: "Redistribution Only", icon: "◐",
-    alphaTarget: 0.90, sigma: 1.8, N: 2,  t: 0.40, theta: 3.5, gA: 0.08, savingsSpread: 2.5 },
+    alphaTarget: 0.90, sigma: 1.8, N: 2,  t: 0.40, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.90 },
   { id: "comp", label: "Competition Only",  icon: "◑",
-    alphaTarget: 0.90, sigma: 1.8, N: 30, t: 0.00, theta: 3.5, gA: 0.08, savingsSpread: 2.5 },
+    alphaTarget: 0.90, sigma: 1.8, N: 30, t: 0.00, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.90 },
 ];
 
 const DEFAULT = PRESETS[0];
@@ -261,6 +267,7 @@ const CHART_COLORS = {
 export default function AGIEconomyDynamic() {
   const [params, setParams] = useState({ ...DEFAULT });
   const [activePreset, setActivePreset] = useState("base");
+  const [yScale, setYScale] = useState("linear"); // "linear" | "log" — toggles value-axis charts
   const set = useCallback((k, v) => { setActivePreset(null); setParams(p => ({ ...p, [k]: v })); }, []);
 
   const history = useMemo(() => simulate(params), [params]);
@@ -391,6 +398,9 @@ export default function AGIEconomyDynamic() {
                 <Slider label="AI Productivity Growth" value={params.gA} min={0} max={0.15} step={0.005}
                   onChange={v => set("gA", v)} fmt={v => `${(v * 100).toFixed(1)}%/yr`}
                   hint="Annual compound growth of AI capability" />
+                <Slider label="Physical Bottleneck γ" value={params.gamma} min={0.5} max={1.0} step={0.05}
+                  onChange={v => set("gamma", v)} fmt={v => v.toFixed(2)}
+                  hint="Returns to capital (energy/compute/land). γ=1: no limit (AK singularity); lower=tighter" />
               </div>
             </div>
             <div>
@@ -450,6 +460,22 @@ export default function AGIEconomyDynamic() {
             good={() => hT.d1Real >= h0.d1Real ? "good" : "bad"} />
         </div>
 
+        {/* ── CHART SCALE TOGGLE ── */}
+        <div className="flex items-center justify-end gap-1.5 mb-2">
+          <span className="text-[9px] uppercase tracking-widest font-bold" style={{ color: "#9ca3af" }}>Value axis</span>
+          {["linear", "log"].map(s => (
+            <button key={s} onClick={() => setYScale(s)}
+              className="px-2.5 py-0.5 text-[10px] rounded-sm transition-all cursor-pointer border capitalize"
+              style={{
+                backgroundColor: yScale === s ? "#1a1a2e" : "white",
+                color: yScale === s ? "#fbbf24" : "#4b5563",
+                borderColor: yScale === s ? "#1a1a2e" : "#d1d5db",
+              }}>
+              {s}
+            </button>
+          ))}
+        </div>
+
         {/* ── TIME SERIES ROW 1: Output+Price, Gini+LaborShare ── */}
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="rounded p-3" style={{ backgroundColor: "white", border: "1px solid #e5e7eb" }}>
@@ -461,9 +487,9 @@ export default function AGIEconomyDynamic() {
                 <CartesianGrid strokeDasharray="2 4" stroke="#e5e7eb" />
                 <XAxis dataKey="period" tick={{ fontSize: 9, fill: "#9ca3af" }}
                   label={{ value: "Period", position: "insideBottom", offset: -2, fontSize: 9, fill: "#9ca3af" }} />
-                <YAxis yAxisId="L" tick={{ fontSize: 9, fill: "#9ca3af" }}
+                <YAxis yAxisId="L" scale={yScale} domain={['auto', 'auto']} allowDataOverflow tick={{ fontSize: 9, fill: "#9ca3af" }}
                   label={{ value: "Output (Y)", angle: -90, position: "insideLeft", fontSize: 8, fill: CHART_COLORS.output }} />
-                <YAxis yAxisId="R" orientation="right" tick={{ fontSize: 9, fill: "#9ca3af" }}
+                <YAxis yAxisId="R" orientation="right" scale={yScale} domain={['auto', 'auto']} allowDataOverflow tick={{ fontSize: 9, fill: "#9ca3af" }}
                   label={{ value: "Price Index", angle: 90, position: "insideRight", fontSize: 8, fill: CHART_COLORS.price }} />
                 <Tooltip content={<TT />} />
                 <Legend wrapperStyle={{ fontSize: 9 }} />
@@ -513,7 +539,7 @@ export default function AGIEconomyDynamic() {
                 <CartesianGrid strokeDasharray="2 4" stroke="#e5e7eb" />
                 <XAxis dataKey="period" tick={{ fontSize: 9, fill: "#9ca3af" }}
                   label={{ value: "Period", position: "insideBottom", offset: -2, fontSize: 9, fill: "#9ca3af" }} />
-                <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }}
+                <YAxis scale={yScale} domain={['auto', 'auto']} allowDataOverflow tick={{ fontSize: 9, fill: "#9ca3af" }}
                   label={{ value: "Real Income", angle: -90, position: "insideLeft", fontSize: 8, fill: "#9ca3af" }} />
                 <Tooltip content={<TT />} />
                 <Legend wrapperStyle={{ fontSize: 9 }} />
@@ -536,7 +562,7 @@ export default function AGIEconomyDynamic() {
                 <CartesianGrid strokeDasharray="2 4" stroke="#e5e7eb" />
                 <XAxis dataKey="period" tick={{ fontSize: 9, fill: "#9ca3af" }}
                   label={{ value: "Period", position: "insideBottom", offset: -2, fontSize: 9, fill: "#9ca3af" }} />
-                <YAxis yAxisId="L" tick={{ fontSize: 9, fill: "#9ca3af" }}
+                <YAxis yAxisId="L" scale={yScale} domain={['auto', 'auto']} allowDataOverflow tick={{ fontSize: 9, fill: "#9ca3af" }}
                   label={{ value: "Capital Stock", angle: -90, position: "insideLeft", fontSize: 8, fill: CHART_COLORS.capitalStock }} />
                 <YAxis yAxisId="R" orientation="right" tick={{ fontSize: 9, fill: "#9ca3af" }} domain={[0, 100]}
                   label={{ value: "Automation %", angle: 90, position: "insideRight", fontSize: 8, fill: CHART_COLORS.alpha }} />
@@ -583,7 +609,7 @@ export default function AGIEconomyDynamic() {
           <div className="grid grid-cols-2 gap-4 text-[10px] leading-relaxed" style={{ color: "#4b5563" }}>
             <div>
               <p className="font-bold mb-0.5" style={{ color: "#1a1a2e" }}>Production (CES task framework)</p>
-              <p>Y = [α<sup>1/σ</sup>(A·K)<sup>ρ</sup> + (1−α)<sup>1/σ</sup>L<sup>ρ</sup>]<sup>1/ρ</sup> / μ<sup>0.1</sup>. Automation α ramps logistically from 30% toward target. AI productivity A grows at rate g<sub>A</sub>.</p>
+              <p>Y = [α<sup>1/σ</sup>(A·K<sup>γ</sup>)<sup>ρ</sup> + (1−α)<sup>1/σ</sup>L<sup>ρ</sup>]<sup>1/ρ</sup> / μ<sup>0.1</sup>. Automation α ramps logistically from 30% toward target. AI productivity A grows at rate g<sub>A</sub>. Physical bottleneck γ&lt;1 imposes diminishing returns to capital (a fixed energy/compute/land factor); γ=1 is an AK economy that has no balanced path when σ&gt;1.</p>
 
               <p className="font-bold mt-1.5 mb-0.5" style={{ color: "#1a1a2e" }}>Market Power (Cournot)</p>
               <p>Markup μ = Nε/(Nε−1), ε=2. Effective labor share = s<sub>L</sub>/μ. DWL factor μ<sup>0.1</sup> reduces output below potential. Profit share (1−1/μ)·Y flows to capital owners.</p>

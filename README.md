@@ -19,15 +19,18 @@ The model combines four building blocks, each grounded in the academic literatur
 Following [Acemoglu & Restrepo (2022)](https://ideas.repec.org/a/wly/emetrp/v90y2022i5p1973-2016.html), output is produced by combining automated and labor tasks via a CES aggregator:
 
 ```
-Y = [α^(1/σ) · (A·K)^ρ + (1−α)^(1/σ) · L^ρ]^(1/ρ) / μ^0.1
+Y = [α^(1/σ) · (A·K^γ)^ρ + (1−α)^(1/σ) · L^ρ]^(1/ρ) / μ^0.1
 ```
 
 - **α** — share of tasks automated by AI-capital
 - **A** — AI productivity (compounds over time at rate g_A)
 - **σ** — elasticity of substitution between capital and labor
 - **ρ = (σ−1)/σ**
+- **γ** — physical bottleneck: returns-to-scale on accumulated capital
 
 The automation share α ramps logistically from 30% toward a user-specified target over the simulation horizon, capturing gradual AI diffusion.
+
+**Physical bottleneck (γ).** Capital enters as `K^γ` rather than `K`. With γ=1 and σ>1 the model is an AK economy — capital and labor are gross substitutes with no diminishing returns, so accumulation has no balanced growth path (Uzawa's theorem) and output, capital, and real incomes diverge super-exponentially toward a finite-time singularity. Setting γ<1 represents a fixed complementary factor that AI cannot accumulate its way around — energy, compute, land, raw materials — which restores a stationary capital–output ratio and keeps the economy on a balanced growth path for any σ. Lower γ means a tighter physical constraint; γ=1 reproduces the unbounded "singularity" regime. The default is γ=0.90.
 
 ### 2. Market Power (Cournot Competition)
 
@@ -51,7 +54,7 @@ k_{i,t+1} = (1−δ)·k_{i,t} + s_i · y_net_{i,t}    (accumulation, δ=0.05)
 s_i = min(s_base · (1 + spread · i/10), 0.40)       (differential savings, capped at 40%)
 ```
 
-Capital depreciates at δ=5% per period. Richer households save a larger fraction of income (capped at 40% to prevent explosive accumulation in extreme scenarios), so capital ownership concentrates endogenously over time — the Piketty r > g mechanism emerges from the model rather than being assumed.
+Capital depreciates at δ=5% per period. Richer households save a larger fraction of income (capped at 40%), so capital ownership concentrates endogenously over time — the Piketty r > g mechanism emerges from the model rather than being assumed. Because accumulation is financed out of (post-tax) income, redistribution directly compresses the differential capital build-up, while the physical bottleneck γ keeps the capital–output ratio stationary so concentration is bounded rather than runaway.
 
 ### 4. Negative Income Tax / UBI
 
@@ -78,6 +81,7 @@ Falls with productivity growth; inflated by markup. Real purchasing power = nomi
 | Target Automation | α | 0.30–0.95 | Long-run share of tasks performed by AI-capital |
 | Substitutability | σ | 0.3–3.0 | σ>1: easy to replace labor; σ<1: labor is bottleneck |
 | AI Productivity Growth | g_A | 0–15%/yr | Compound growth rate of AI capability |
+| Physical Bottleneck | γ | 0.5–1.0 | Returns to accumulated capital. γ=1: no limit (AK singularity); γ<1: tighter energy/compute/land constraint |
 | Competing Firms | N | 1–50 | Market structure: 1=monopoly, 50≈perfect competition |
 | NIT/UBI Rate | t | 0–60% | Negative income tax rate |
 | Wealth Concentration | θ | 0–5 | Initial capital distribution skewness |
@@ -130,7 +134,7 @@ This is a first-cut model for building intuition, not a calibrated forecasting t
 - **Small deadweight-loss exponent**: Market power enters chiefly as a *distributional* distortion — it compresses the labor share (`s_L/μ`) and routes rents to capital — while the efficiency loss is deliberately mild (`Y/μ^0.1`). Under duopoly this means output stays high; a larger exponent would model more aggressive monopoly output distortions.
 - **No capital ownership broadening**: Sovereign wealth funds, stakeholder ownership, and broad-based equity participation are arguably a third policy dimension not yet modeled.
 - **Exogenous market structure**: AI may itself drive concentration through economies of scale in training and data. Endogenizing N as a function of AI capability would capture this self-reinforcing dynamic.
-- **No Baumol bottlenecks**: The model doesn't capture sector-level heterogeneity in automation difficulty, which Aghion-Jones-Jones emphasize as a constraint on aggregate growth.
+- **Aggregate, not sectoral, bottleneck**: The physical bottleneck γ imposes economy-wide diminishing returns to capital, but the model still doesn't capture *sector-level* heterogeneity in automation difficulty (the full Baumol / Aghion-Jones-Jones mechanism, where slow-to-automate sectors come to dominate value added).
 - **Stylized savings**: A richer household optimization problem (consumption-savings with borrowing constraints) would replace the fixed savings rates.
 - **No international dimension**: Trade and cross-border capital flows matter for how AI's distributional effects play out globally.
 
