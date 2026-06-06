@@ -88,10 +88,16 @@ function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread, gamma })
   const kSum0 = kRaw0.reduce((a, b) => a + b, 0);
   let kAbs = kRaw0.map(k => (k / kSum0) * K_0);
 
-  // Savings rate by decile: base rate × (1 + spread × rank/10)
+  // Savings rate by decile: base rate × (1 + spread × rank/10).
+  // No cap: the old 40% cap was a band-aid for the explosive accumulation that the
+  // physical bottleneck (gamma) now controls. At the slider's max spread (3) the top
+  // decile saves 0.48 of income, so no cap is needed — and removing it lets capital
+  // concentration reflect the differential-savings story (it also fixes the backwards
+  // quirk where raising the spread pushed top deciles into the cap and *reduced*
+  // inequality by equalizing their savings rates).
   const sBase = 0.12;
   const savingsRates = Array.from({ length: N_DECILES }, (_, i) =>
-    Math.min(sBase * (1 + savingsSpread * ((i + 1) / N_DECILES)), 0.40) // Cap at 40%
+    sBase * (1 + savingsSpread * ((i + 1) / N_DECILES))
   );
 
   const history = [];

@@ -51,10 +51,10 @@ Inspired by [Moll, Rachel & Restrepo (2022)](https://benjaminmoll.com/wp-content
 ```
 k_i ∝ i^θ          (initial distribution, θ controls concentration)
 k_{i,t+1} = (1−δ)·k_{i,t} + s_i · y_net_{i,t}    (accumulation, δ=0.05)
-s_i = min(s_base · (1 + spread · i/10), 0.40)       (differential savings, capped at 40%)
+s_i = s_base · (1 + spread · i/10)                  (differential savings; s_base = 0.12)
 ```
 
-Capital depreciates at δ=5% per period. Richer households save a larger fraction of income (capped at 40%), so capital ownership concentrates endogenously over time — the Piketty r > g mechanism emerges from the model rather than being assumed. Because accumulation is financed out of (post-tax) income, redistribution directly compresses the differential capital build-up, while the physical bottleneck γ keeps the capital–output ratio stationary so concentration is bounded rather than runaway.
+Capital depreciates at δ=5% per period. Richer households save a larger fraction of income, so capital ownership concentrates endogenously over time — the Piketty r > g mechanism emerges from the model rather than being assumed. Because accumulation is financed out of (post-tax) income, redistribution directly compresses the differential capital build-up, while the physical bottleneck γ keeps the capital–output ratio stationary so concentration is bounded rather than runaway. (Earlier versions capped savings rates at 40% to prevent runaway accumulation; γ now handles stability, so the cap was removed — it had been suppressing the very concentration the high-inequality scenarios are meant to show.)
 
 ### 4. Negative Income Tax / UBI
 
