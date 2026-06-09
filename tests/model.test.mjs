@@ -159,20 +159,17 @@ test("purchasingPowerMultiples: one per decile, vs own period-0 income", () => {
       approx(x, hist[T_PERIODS].posttax[i] / hist[0].posttax[i]);
     });
   }
-  // In the high-growth presets everyone ends above pre-AGI purchasing power...
-  for (const id of ["dys", "uto", "comp", "ubi"]) {
-    const m = purchasingPowerMultiples(simulate(PRESETS.find(p => p.id === id)));
-    assert.ok(m.every(x => x > 1), `${id}: all deciles above pre-AGI parity`);
-  }
-  // ...but how MUCH above is decided by competition: under monopoly (Dystopia,
-  // Redistribution Only) the bottom decile barely clears parity, while under
-  // competition (Utopia, Competition Only) it reaches thousands of times its
-  // pre-AGI purchasing power
+  // The 2×2 by the bottom decile's fate. Dystopia (monopoly, no transfers):
+  // wages collapse, no capital, frozen prices — D1 ends ABSOLUTELY worse off
+  // than pre-AGI. A fixed UBI under the same monopoly holds the floor near
+  // pre-AGI subsistence but no higher (frozen payment × frozen prices).
+  // Competition lifts D1 to thousands of times its pre-AGI purchasing power.
   const at = id => purchasingPowerMultiples(simulate(PRESETS.find(p => p.id === id)));
-  const dys = at("dys"), uto = at("uto"), ubi = at("ubi");
-  assert.ok(dys[0] < 50, "dystopia: bottom decile barely above parity");
-  assert.ok(ubi[0] < 50 * dys[0], "a fixed UBI under monopoly buys little more — prices never fall");
-  assert.ok(uto[0] > 1000 * dys[0], "competition is what lifts the bottom decile to abundance");
+  const dys = at("dys"), uto = at("uto"), ubi = at("ubi"), comp = at("comp");
+  assert.ok(dys[0] < 0.5, "dystopia: bottom decile absolutely immiserated");
+  assert.ok(dys[9] > 100, "dystopia: the top decile still gains — rents flow to capital");
+  assert.ok(ubi[0] > 2 * dys[0] && ubi[0] < 2, "fixed UBI under monopoly: floor near pre-AGI subsistence");
+  assert.ok(uto[0] > 1000 && comp[0] > 1000, "competition lifts the bottom decile to abundance");
   // Flat transfers leave gains skewed; compressing RELATIVE gains takes the
   // indexed NIT (a fixed share of the economy, not a fixed payment)
   const skew = m => m[9] / m[0];
@@ -198,8 +195,11 @@ test("flat-UBI mode: matches indexed NIT at period 0, then fades as growth outru
   // The funding rate collapses as the economy outgrows the fixed payment...
   assert.ok(flat[T_PERIODS].tau < 1e-3, `tau_T = ${flat[T_PERIODS].tau}`);
   // ...so the end state is near laissez-faire, while the indexed NIT keeps compressing
+  // (post-tax Gini = (1−t)·pre-tax Gini each period; with hand-to-mouth bottom
+  // deciles the poor can't save transfers into capital, so wealth concentration
+  // persists and compression is bounded by the tax formula itself)
   assert.ok(Math.abs(flat[T_PERIODS].giniPost - none[T_PERIODS].giniPost) < 0.05);
-  assert.ok(indexed[T_PERIODS].giniPost < 0.3);
+  assert.ok(indexed[T_PERIODS].giniPost < none[T_PERIODS].giniPost - 0.3);
   assert.ok(indexed[T_PERIODS].d1Post > 100 * flat[T_PERIODS].d1Post,
     "indexed transfers leave the bottom decile orders of magnitude better off");
 

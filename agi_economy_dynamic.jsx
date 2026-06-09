@@ -286,7 +286,7 @@ export default function AGIEconomyDynamic() {
                   hint="k_i ∝ i^θ. θ=0 equal, θ=5 extreme" />
                 <Slider label="Savings Spread" value={params.savingsSpread} min={0} max={3} step={0.1}
                   onChange={v => set("savingsSpread", v)} fmt={v => v.toFixed(1)}
-                  hint="How much more the rich save. 0=equal, 3=extreme" />
+                  hint="Tilts savings around 12%: rich save more, poor save less. ≥1 ⇒ bottom decile saves nothing" />
               </div>
             </div>
             <div>
@@ -511,7 +511,7 @@ export default function AGIEconomyDynamic() {
             </div>
             <div>
               <p className="font-bold mb-0.5" style={{ color: "#1a1a2e" }}>Capital Dynamics</p>
-              <p>k<sub>i,t+1</sub> = (1−δ)k<sub>i,t</sub> + s<sub>i</sub>·y<sup>net</sup><sub>i,t</sub>. Depreciation δ={DEPRECIATION}. Savings rate s<sub>i</sub> = {(S_BASE*100).toFixed(0)}% × (1 + spread × rank/10). Richer deciles save more → capital concentrates endogenously.</p>
+              <p>k<sub>i,t+1</sub> = (1−δ)k<sub>i,t</sub> + s<sub>i</sub>·y<sup>net</sup><sub>i,t</sub>. Depreciation δ={DEPRECIATION}. Savings rate s<sub>i</sub> = max({(S_BASE*100).toFixed(0)}%·(1 + spread·(rank−5.5)/4.5), 0): the spread tilts savings around the {(S_BASE*100).toFixed(0)}% base — richer deciles save more, poorer save less (at spread≥1 the bottom decile is hand-to-mouth) → capital concentrates endogenously.</p>
 
               <p className="font-bold mt-1.5 mb-0.5" style={{ color: "#1a1a2e" }}>Negative Income Tax</p>
               <p>y<sup>net</sup> = (1−t)·y + t·ȳ. Budget-balanced. Labor response: L = (1−λt)·(1−α)<sup>0.3</sup>, λ=0.25 — both the tax and automation (falling effective wages) reduce labor supply. Two transfer modes: <em>Indexed (NIT)</em> keeps rate t constant, so the per-person transfer t·ȳ grows with the economy; <em>Flat UBI</em> fixes the transfer in real terms at t × period-0 mean income, funded by the budget-balancing rate τ = 10B/Y, which collapses toward zero as the economy outgrows the fixed payment.</p>

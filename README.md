@@ -58,11 +58,11 @@ Inspired by [Moll, Rachel & Restrepo (2022)](https://benjaminmoll.com/wp-content
 
 ```
 k_i ∝ i^θ          (initial distribution, θ controls concentration)
-k_{i,t+1} = (1−δ)·k_{i,t} + s_i · y_net_{i,t}    (accumulation, δ=0.05)
-s_i = s_base · (1 + spread · i/10)                  (differential savings; s_base = 0.12)
+k_{i,t+1} = (1−δ)·k_{i,t} + s_i · y_net_{i,t}            (accumulation, δ=0.05)
+s_i = max( s_base · (1 + spread·(i − 5.5)/4.5), 0 )        (differential savings; s_base = 0.12)
 ```
 
-Capital depreciates at δ=5% per period. Richer households save a larger fraction of income, so capital ownership concentrates endogenously over time — the Piketty r > g mechanism emerges from the model rather than being assumed. Because accumulation is financed out of (post-tax) income, redistribution directly compresses the differential capital build-up, while the physical bottleneck γ keeps the capital–output ratio stationary so concentration is bounded rather than runaway. (Earlier versions capped savings rates at 40% to prevent runaway accumulation; γ now handles stability, so the cap was removed — it had been suppressing the very concentration the high-inequality scenarios are meant to show.)
+Capital depreciates at δ=5% per period. The savings spread tilts savings rates *around* the 12% base, centered on the middle of the distribution: richer households save more, poorer households save less, and at spread ≥ 1 the bottom decile saves nothing — hand-to-mouth, as in the data. Capital ownership therefore concentrates endogenously over time — the Piketty r > g mechanism emerges from the model rather than being assumed — and the bottom deciles' living standards ride wages and transfers alone, with no rescue from a micro-stake in the capital pool (an earlier symmetric-savings form had even the poorest decile saving 12%+, which let it ride monopoly rents to implausible gains in the dystopia scenarios). The physical bottleneck γ keeps the capital–output ratio stationary so concentration is bounded rather than runaway. (Earlier versions also capped savings rates at 40%; γ now handles stability, so the cap was removed.)
 
 ### 4. Negative Income Tax / UBI
 
@@ -115,16 +115,16 @@ The four AI presets form a clean 2×2 around the two policy levers — market st
 | Preset | α | σ | N | Transfer | Key Outcome |
 |--------|---|---|---|----------|-------------|
 | **Today's Trajectory** | 50% | 1.0 | 12 | 10% indexed | Moderate growth, slowly rising inequality |
-| **AI Dystopia** | 90% | 1.8 | 1 | none | Monopoly: prices never fall, every productivity gain becomes profit; output is choked and the bottom decile barely clears its pre-AGI standard of living |
-| **Redistribution Only** | 90% | 1.8 | 1 | 40% flat UBI | The fixed payment buys the same basket forever — monopoly keeps prices from falling, so the floor never rises |
-| **Competition Only** | 90% | 1.8 | 30 | none | Prices collapse ~50×; even the bottom decile reaches tens of thousands of times its pre-AGI purchasing power — but gains are wildly skewed and rest on residual wages |
-| **AI Utopia** | 90% | 1.8 | 30 | 40% flat UBI | The same fixed UBI now rides deflation: competition is what makes a modest flat transfer a claim on ever-growing abundance |
+| **AI Dystopia** | 90% | 1.8 | 1 | none | Monopoly: prices never fall, every productivity gain becomes profit. Wages collapse, the bottom decile owns no capital — it ends *absolutely poorer* than pre-AGI (≈×0.2) while the top gains thousands-fold |
+| **Redistribution Only** | 90% | 1.8 | 1 | 40% flat UBI | The fixed payment buys the same basket forever — monopoly keeps prices from falling, so the floor holds the bottom near pre-AGI subsistence but no higher |
+| **Competition Only** | 90% | 1.8 | 30 | none | Prices collapse ~50×; even the bottom decile reaches thousands of times its pre-AGI purchasing power — but gains are wildly skewed and rest entirely on residual wages |
+| **AI Utopia** | 90% | 1.8 | 30 | 40% flat UBI | The same fixed UBI now rides deflation: competition is what makes a modest flat transfer a claim on ever-growing abundance, on top of a guaranteed floor wages can't provide |
 
 ## Key Finding
 
 **A flat UBI is a bet on competition.** The transfer's nominal level matters far less than whether prices fall — and whether prices fall is a policy choice about market structure.
 
-- *Monopoly with no redistribution* (Dystopia) is absolute, not just relative, failure: prices never fall, so productivity gains reach no one but capital owners.
+- *Monopoly with no redistribution* (Dystopia) is absolute, not just relative, failure: prices never fall, so productivity gains reach no one but capital owners — the bottom decile, its wages automated away and owning no capital, ends poorer than it started.
 - *A fixed UBI under monopoly* (Redistribution Only) freezes the bottom at its starting basket: a fixed payment facing fixed prices buys the same goods forever, while the owners of capital pull away.
 - *Competition without transfers* (Competition Only) delivers astonishing absolute gains through deflation, but the bottom decile's claim on them rests on residual wages — fragile as automation deepens — and relative inequality stays extreme.
 - *The combination* (Utopia) gives the bottom decile both a guaranteed claim and a reason for that claim to grow: the same fixed payment buys ~50× more as competition forces prices toward collapsing marginal cost.
