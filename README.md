@@ -30,6 +30,8 @@ Y = [α^(1/σ) · (A·K^γ)^ρ + (1−α)^(1/σ) · L^ρ]^(1/ρ) / μ^0.7
 
 The automation share α ramps logistically from 30% toward a user-specified target over the simulation horizon, capturing gradual AI diffusion.
 
+A subtlety of this share-weight normalization: as σ→1 the aggregator converges not to plain Cobb-Douglas but to `e^(H(α)) · (A·K^γ)^α · L^(1−α)`, where `H(α) = −α·ln α − (1−α)·ln(1−α)` is the entropy of the task shares. The code implements this limit explicitly so that output is smooth in σ (an earlier version used the plain Cobb-Douglas form, which produced an artificial output dip at exactly σ=1).
+
 **Physical bottleneck (γ).** Capital enters as `K^γ` rather than `K`. With γ=1 and σ>1 the model is an AK economy — capital and labor are gross substitutes with no diminishing returns, so accumulation has no balanced growth path (Uzawa's theorem) and output, capital, and real incomes diverge super-exponentially toward a finite-time singularity. Setting γ<1 represents a fixed complementary factor that AI cannot accumulate its way around — energy, compute, land, raw materials — which restores a stationary capital–output ratio and keeps the economy on a balanced growth path for any σ. Lower γ means a tighter physical constraint; γ=1 reproduces the unbounded "singularity" regime. The default is γ=0.90.
 
 ### 2. Market Power (Cournot Competition)

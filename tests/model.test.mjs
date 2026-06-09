@@ -55,15 +55,26 @@ test("equilibrium: Cournot markup μ = Nε/(Nε−1)", () => {
   assert.ok(mu(50) < 1.02); // ≈ competitive
 });
 
-test("equilibrium: no jump at the seams of the Cobb-Douglas blend (σ near 1)", () => {
+test("equilibrium: σ→1 limit is the entropy-corrected Cobb-Douglas form", () => {
+  // With share weights α^(1/σ), lim_{σ→1} CES = e^{H(α)}·X^α·L^(1−α), where
+  // H(α) = −α·ln α − (1−α)·ln(1−α). The plain CD form (no e^H factor) made
+  // output dip artificially at σ=1.
+  const alpha = 0.6, A = 1.5, K = 1.2, gamma = 0.9, t = 0.1;
+  const eq = equilibrium(alpha, 1.0, 10, t, A, K, skewedFracs, gamma);
+  const H = -alpha * Math.log(alpha) - (1 - alpha) * Math.log(1 - alpha);
+  const L = (1 - 0.25 * t) * Math.pow(1 - alpha, 0.3);
+  const Y_pot = Math.exp(H) * Math.pow(A * Math.pow(K, gamma), alpha) * Math.pow(L, 1 - alpha);
+  approx(eq.Y, Y_pot / Math.pow(eq.mu, 0.7), 1e-9);
+  approx(eq.laborShare, (1 - alpha) / eq.mu, 1e-9);
+});
+
+test("equilibrium: Y is smooth in σ across the Cobb-Douglas blend (no dip at σ=1)", () => {
   const Y = sigma => equilibrium(0.6, sigma, 10, 0.1, 1.5, 1.2, skewedFracs, 0.9).Y;
-  // The blend spans |ρ| < 0.05, i.e. σ ∈ (0.9524, 1.0526). Inside it Y moves
-  // steeply by design (the CES form and the code's CD limit disagree near σ=1,
-  // and the blend stitches them), so we only require continuity at the seams.
-  approx(Y(0.999), Y(1.0), 1e-3);
-  approx(Y(1.001), Y(1.0), 1e-3);
-  approx(Y(1.0526), Y(1.0531), 5e-3); // upper seam: ρ crosses +0.05
-  approx(Y(0.9520), Y(0.9525), 5e-3); // lower seam: ρ crosses −0.05
+  // The blend spans |ρ| < 0.05, i.e. σ ∈ (0.9524, 1.0526). With the entropy-
+  // corrected CD limit the whole neighborhood of σ=1 should be flat to ~1%.
+  const grid = [0.94, 0.9525, 0.98, 0.999, 1.0, 1.001, 1.02, 1.0526, 1.06].map(Y);
+  const [lo, hi] = [Math.min(...grid), Math.max(...grid)];
+  assert.ok(hi / lo < 1.01, `Y should be near-flat across σ≈1, got spread ${(hi / lo - 1) * 100}%`);
 });
 
 test("equilibrium: labor share falls with automation α (σ > 1)", () => {

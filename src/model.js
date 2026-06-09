@@ -47,10 +47,19 @@ export function equilibrium(alpha, sigma, N, t, A, K_total, kFracs, gamma) {
   // a stationary capital–output ratio and keeps magnitudes finite for any sigma.
   const Kcap = Math.pow(K_total, gamma);
 
+  // The sigma->1 limit of this CES is NOT plain Cobb-Douglas: with share
+  // weights alpha^(1/sigma), expanding ln Y around rho=0 leaves an extra
+  // entropy factor e^{H(alpha)}, H(alpha) = -alpha*ln(alpha) - (1-alpha)*ln(1-alpha).
+  // Omitting it made output dip artificially at sigma=1 (Y was ~half its
+  // value just outside the blend window). The labor-share limit is still 1-alpha.
+  const aC = Math.min(Math.max(alpha, 1e-8), 1 - 1e-8);
+  const H_alpha = -aC * Math.log(aC) - (1 - aC) * Math.log(1 - aC);
+  const Y_cd = Math.exp(H_alpha) * Math.pow(A * Kcap, alpha) * Math.pow(L, 1 - alpha);
+
   let Y_pot, s_L;
   if (Math.abs(rho) < 0.005) {
     // Cobb-Douglas limit (sigma ≈ 1)
-    Y_pot = Math.pow(A * Kcap, alpha) * Math.pow(L, 1 - alpha);
+    Y_pot = Y_cd;
     s_L = 1 - alpha;
   } else {
     const tK = Math.pow(Math.max(alpha, 1e-8), 1 / sigma) * Math.pow(A * Kcap, rho);
@@ -58,10 +67,9 @@ export function equilibrium(alpha, sigma, N, t, A, K_total, kFracs, gamma) {
     const denom = Math.max(tK + tL, 1e-10);
     Y_pot = Math.pow(denom, 1 / rho);
     s_L = tL / denom;
-    // Smooth blend near sigma=1 to avoid discontinuity
+    // Smooth blend near sigma=1 to avoid numerical noise from the 1/rho exponent
     if (Math.abs(rho) < 0.05) {
       const blend = Math.abs(rho) / 0.05; // 0 at rho=0, 1 at |rho|=0.05
-      const Y_cd = Math.pow(A * Kcap, alpha) * Math.pow(L, 1 - alpha);
       const s_L_cd = 1 - alpha;
       Y_pot = Y_cd * (1 - blend) + Y_pot * blend;
       s_L = s_L_cd * (1 - blend) + s_L * blend;
