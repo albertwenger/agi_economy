@@ -238,17 +238,21 @@ export function purchasingPowerMultiples(history) {
 
 // ── Presets ──
 
+// The four AI presets form a clean 2×2 around two policy levers, all sharing
+// the same technology/capital parameters: Dystopia = monopoly + no transfers;
+// Redistribution Only = Dystopia + a fixed (flat) UBI; Competition Only =
+// Dystopia + competition; Utopia = both levers combined.
 export const PRESETS = [
   { id: "base", label: "Today's Trajectory", icon: "◉",
-    alphaTarget: 0.50, sigma: 1.0, N: 12, t: 0.10, theta: 2.5, gA: 0.02, savingsSpread: 1.5, gamma: 0.90 },
+    alphaTarget: 0.50, sigma: 1.0, N: 12, t: 0.10, theta: 2.5, gA: 0.02, savingsSpread: 1.5, gamma: 0.90, transferMode: "indexed" },
   { id: "dys",  label: "AI Dystopia",       icon: "▼",
-    alphaTarget: 0.90, sigma: 1.8, N: 2,  t: 0.00, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.90 },
+    alphaTarget: 0.90, sigma: 1.8, N: 1,  t: 0.00, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.90, transferMode: "flat" },
   { id: "uto",  label: "AI Utopia",         icon: "▲",
-    alphaTarget: 0.90, sigma: 1.8, N: 30, t: 0.30, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.90 },
+    alphaTarget: 0.90, sigma: 1.8, N: 30, t: 0.40, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.90, transferMode: "flat" },
   { id: "ubi",  label: "Redistribution Only", icon: "◐",
-    alphaTarget: 0.90, sigma: 1.8, N: 2,  t: 0.40, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.90 },
+    alphaTarget: 0.90, sigma: 1.8, N: 1,  t: 0.40, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.90, transferMode: "flat" },
   { id: "comp", label: "Competition Only",  icon: "◑",
-    alphaTarget: 0.90, sigma: 1.8, N: 30, t: 0.00, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.90 },
+    alphaTarget: 0.90, sigma: 1.8, N: 30, t: 0.00, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.90, transferMode: "flat" },
 ];
 
 export const DEFAULT_PRESET = PRESETS[0];

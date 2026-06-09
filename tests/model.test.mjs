@@ -164,13 +164,22 @@ test("purchasingPowerMultiples: one per decile, vs own period-0 income", () => {
     const m = purchasingPowerMultiples(simulate(PRESETS.find(p => p.id === id)));
     assert.ok(m.every(x => x > 1), `${id}: all deciles above pre-AGI parity`);
   }
-  // ...but the gains are skewed without redistribution and flat with it
+  // ...but how MUCH above is decided by competition: under monopoly (Dystopia,
+  // Redistribution Only) the bottom decile barely clears parity, while under
+  // competition (Utopia, Competition Only) it reaches thousands of times its
+  // pre-AGI purchasing power
+  const at = id => purchasingPowerMultiples(simulate(PRESETS.find(p => p.id === id)));
+  const dys = at("dys"), uto = at("uto"), ubi = at("ubi");
+  assert.ok(dys[0] < 50, "dystopia: bottom decile barely above parity");
+  assert.ok(ubi[0] < 50 * dys[0], "a fixed UBI under monopoly buys little more — prices never fall");
+  assert.ok(uto[0] > 1000 * dys[0], "competition is what lifts the bottom decile to abundance");
+  // Flat transfers leave gains skewed; compressing RELATIVE gains takes the
+  // indexed NIT (a fixed share of the economy, not a fixed payment)
   const skew = m => m[9] / m[0];
-  const dys = purchasingPowerMultiples(simulate(PRESETS.find(p => p.id === "dys")));
-  const uto = purchasingPowerMultiples(simulate(PRESETS.find(p => p.id === "uto")));
-  assert.ok(skew(dys) > 1000, "dystopia: top decile's multiple dwarfs the bottom's");
-  assert.ok(skew(uto) < 5, "utopia: gains roughly even across deciles");
-  assert.ok(uto[0] > 100 * dys[0], "redistribution+competition multiplies bottom-decile gains");
+  const indexed = purchasingPowerMultiples(simulate(
+    { ...PRESETS.find(p => p.id === "uto"), transferMode: "indexed" }));
+  assert.ok(skew(uto) > 1000, "flat UBI: absolute abundance, but gains stay skewed");
+  assert.ok(skew(indexed) < 5, "indexed NIT: gains roughly even across deciles");
 });
 
 test("flat-UBI mode: matches indexed NIT at period 0, then fades as growth outruns it", () => {

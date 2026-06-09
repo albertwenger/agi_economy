@@ -110,25 +110,26 @@ Real purchasing power is **not** computed by deflating income by this price inde
 
 ## Scenarios
 
-Five presets illustrate the range of outcomes:
+The four AI presets form a clean 2×2 around the two policy levers — market structure (N) and a fixed (flat) UBI — holding all technology and capital parameters equal:
 
-| Preset | α | σ | N | t | Key Outcome |
-|--------|---|---|---|---|-------------|
-| **Today's Trajectory** | 50% | 1.0 | 12 | 10% | Moderate growth, slowly rising inequality |
-| **AI Dystopia** | 90% | 1.8 | 2 | 0% | Prices barely fall as markups compound; output is choked and rents flow to capital; the bottom decile is left far behind |
-| **AI Utopia** | 90% | 1.8 | 30 | 30% | Broadly shared prosperity — a large, cheap pie and a fair share of it |
-| **Redistribution Only** | 90% | 1.8 | 2 | 40% | Inequality compressed, but the pie is shrunk and skimmed by monopoly rents |
-| **Competition Only** | 90% | 1.8 | 30 | 0% | Bigger, cheaper pie, but the unwaged bottom decile is excluded from it |
+| Preset | α | σ | N | Transfer | Key Outcome |
+|--------|---|---|---|----------|-------------|
+| **Today's Trajectory** | 50% | 1.0 | 12 | 10% indexed | Moderate growth, slowly rising inequality |
+| **AI Dystopia** | 90% | 1.8 | 1 | none | Monopoly: prices never fall, every productivity gain becomes profit; output is choked and the bottom decile barely clears its pre-AGI standard of living |
+| **Redistribution Only** | 90% | 1.8 | 1 | 40% flat UBI | The fixed payment buys the same basket forever — monopoly keeps prices from falling, so the floor never rises |
+| **Competition Only** | 90% | 1.8 | 30 | none | Prices collapse ~50×; even the bottom decile reaches tens of thousands of times its pre-AGI purchasing power — but gains are wildly skewed and rest on residual wages |
+| **AI Utopia** | 90% | 1.8 | 30 | 40% flat UBI | The same fixed UBI now rides deflation: competition is what makes a modest flat transfer a claim on ever-growing abundance |
 
 ## Key Finding
 
-Neither competition nor redistribution alone is sufficient — they do different jobs, and you need both. **Competition sets the size of the pie; redistribution sets who shares it.**
+**A flat UBI is a bet on competition.** The transfer's nominal level matters far less than whether prices fall — and whether prices fall is a policy choice about market structure.
 
-- *Competition without redistribution* produces a large, cheap-goods economy, but a fully automated one in which displaced workers have no wage and little capital — they are excluded from the abundance. Inequality stays extreme.
-- *Redistribution without competition* gives everyone a claim on output, but it is a claim on a pie that monopoly has shrunk (deadweight loss) and skimmed (rents to concentrated capital). The bottom decile's real income is a fraction of what it could be.
-- *The combination* gives displaced workers both a share and a large pie to share: in the model, adding competition to a fully-redistributive economy multiplies the bottom decile's real income by orders of magnitude (monopoly now chokes the pie's growth, not just its level), while redistribution is what compresses inequality in the first place.
+- *Monopoly with no redistribution* (Dystopia) is absolute, not just relative, failure: prices never fall, so productivity gains reach no one but capital owners.
+- *A fixed UBI under monopoly* (Redistribution Only) freezes the bottom at its starting basket: a fixed payment facing fixed prices buys the same goods forever, while the owners of capital pull away.
+- *Competition without transfers* (Competition Only) delivers astonishing absolute gains through deflation, but the bottom decile's claim on them rests on residual wages — fragile as automation deepens — and relative inequality stays extreme.
+- *The combination* (Utopia) gives the bottom decile both a guaranteed claim and a reason for that claim to grow: the same fixed payment buys ~50× more as competition forces prices toward collapsing marginal cost.
 
-This is the intuition that without competition, productivity gains become profits rather than lower prices — income flows to the owners of capital while labor, its wages driven down or automated away, is left unable to afford the abundance unless redistribution gives it a claim and competition keeps that claim valuable.
+One honest nuance the model surfaces: with vigorous competition, the *terminal* difference between Utopia and Competition Only is small — deflation does most of the work, and the flat UBI mainly provides the floor and the transition insurance. What a flat UBI cannot do, even with competition, is compress *relative* inequality (Gini stays ≈0.8): everyone gets radically richer, but capital owners get richer faster. Compressing shares requires the indexed NIT (a fixed share of mean income rather than a fixed payment), available via the transfer-mode toggle.
 
 ## Academic References
 
