@@ -187,6 +187,14 @@ export function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread, g
   return history;
 }
 
+// Each decile's real purchasing power at the end of the simulation as a
+// multiple of its OWN pre-AGI (period 0) level. One-good economy: real
+// purchasing power is post-tax income, so the multiple is the income ratio.
+export function purchasingPowerMultiples(history) {
+  const h0 = history[0], hT = history[history.length - 1];
+  return h0.posttax.map((y0, i) => hT.posttax[i] / Math.max(y0, 1e-10));
+}
+
 // ── Presets ──
 
 export const PRESETS = [

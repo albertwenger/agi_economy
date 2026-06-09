@@ -12,7 +12,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   DEMAND_EPS, T_PERIODS, N_DECILES, K_0,
-  gini, equilibrium, simulate, PRESETS,
+  gini, equilibrium, simulate, PRESETS, purchasingPowerMultiples,
 } from "../src/model.js";
 
 const equalFracs = Array(N_DECILES).fill(1 / N_DECILES);
@@ -147,6 +147,30 @@ test("simulate: differential savings concentrate capital; redistribution counter
   const topShare = hist => hist[T_PERIODS].kFracs[9];
   assert.ok(topShare(noTax) > noTax[0].kFracs[9], "top decile capital share rises (r > g)");
   assert.ok(topShare(tax) < topShare(noTax), "NIT slows differential accumulation");
+});
+
+test("purchasingPowerMultiples: one per decile, vs own period-0 income", () => {
+  for (const p of PRESETS) {
+    const hist = simulate(p);
+    const m = purchasingPowerMultiples(hist);
+    assert.equal(m.length, N_DECILES);
+    m.forEach((x, i) => {
+      assert.ok(Number.isFinite(x) && x > 0);
+      approx(x, hist[T_PERIODS].posttax[i] / hist[0].posttax[i]);
+    });
+  }
+  // In the high-growth presets everyone ends above pre-AGI purchasing power...
+  for (const id of ["dys", "uto", "comp", "ubi"]) {
+    const m = purchasingPowerMultiples(simulate(PRESETS.find(p => p.id === id)));
+    assert.ok(m.every(x => x > 1), `${id}: all deciles above pre-AGI parity`);
+  }
+  // ...but the gains are skewed without redistribution and flat with it
+  const skew = m => m[9] / m[0];
+  const dys = purchasingPowerMultiples(simulate(PRESETS.find(p => p.id === "dys")));
+  const uto = purchasingPowerMultiples(simulate(PRESETS.find(p => p.id === "uto")));
+  assert.ok(skew(dys) > 1000, "dystopia: top decile's multiple dwarfs the bottom's");
+  assert.ok(skew(uto) < 5, "utopia: gains roughly even across deciles");
+  assert.ok(uto[0] > 100 * dys[0], "redistribution+competition multiplies bottom-decile gains");
 });
 
 // ── The thesis: 2×2 policy grid ──

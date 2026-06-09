@@ -2,11 +2,11 @@ import { useState, useMemo, useCallback } from "react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, ReferenceLine, Area, AreaChart,
-  ComposedChart
+  ComposedChart, LabelList
 } from "recharts";
 import {
   DEPRECIATION, T_PERIODS, N_DECILES, S_BASE,
-  simulate, PRESETS, DEFAULT_PRESET,
+  simulate, PRESETS, DEFAULT_PRESET, purchasingPowerMultiples,
 } from "./src/model.js";
 
 
@@ -56,7 +56,7 @@ function Metric({ label, v0, vT, fmt, good }) {
   );
 }
 
-const TT = ({ active, payload, label, labelFmt }) => {
+const TT = ({ active, payload, label, labelFmt, valueFmt }) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded shadow-lg p-2 text-xs" style={{ backgroundColor: "#1a1a2e", color: "#e5e7eb", zIndex: 50 }}>
@@ -64,12 +64,17 @@ const TT = ({ active, payload, label, labelFmt }) => {
       {payload.map((e, i) => (
         <div key={i} className="flex justify-between gap-3">
           <span style={{ color: e.color }}>{e.name}</span>
-          <span className="font-mono">{typeof e.value === "number" ? e.value.toFixed(3) : e.value}</span>
+          <span className="font-mono">{typeof e.value === "number" ? (valueFmt ? valueFmt(e.value) : e.value.toFixed(3)) : e.value}</span>
         </div>
       ))}
     </div>
   );
 };
+
+// Compact "×N" formatter for purchasing-power multiples spanning many orders
+// of magnitude (×0.85 … ×3.2e8)
+const fmtMult = v =>
+  "×" + (v >= 10000 ? v.toExponential(1) : v >= 100 ? v.toFixed(0) : v.toFixed(2));
 
 const CHART_COLORS = {
   output: "#2d6a4f",
@@ -138,6 +143,12 @@ export default function AGIEconomyDynamic() {
       };
     });
   }, [hT, params.t]);
+
+  // Purchasing power at T as a multiple of each decile's own pre-AGI (period 0) level
+  const ppData = useMemo(() =>
+    purchasingPowerMultiples(history).map((m, i) => ({ name: `D${i + 1}`, multiple: +m.toPrecision(4) })),
+    [history]);
+  const ppMin = Math.min(...ppData.map(d => d.multiple));
 
   // Capital concentration over time (top decile share)
   const topCapShare0 = (h0.kFracs[9] * 100).toFixed(1);
@@ -426,6 +437,34 @@ export default function AGIEconomyDynamic() {
               <Bar dataKey="ubi" stackId="a" fill={CHART_COLORS.ubi} radius={[2, 2, 0, 0]} name="ubi" />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* ── PURCHASING POWER VS PRE-AGI ── */}
+        <div className="rounded p-3 mb-3" style={{ backgroundColor: "white", border: "1px solid #e5e7eb" }}>
+          <h2 className="text-[9px] uppercase tracking-widest mb-2 font-bold" style={{ color: "#6b7280" }}>
+            Purchasing Power vs. Pre-AGI Economy — Each Decile's Real Income at t={T_PERIODS} as a Multiple of Its Own at t=0
+          </h2>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={ppData} barCategoryGap="15%">
+              <CartesianGrid strokeDasharray="2 4" stroke="#e5e7eb" />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#9ca3af" }} />
+              <YAxis scale={yScale} allowDataOverflow
+                domain={yScale === "log" ? [Math.min(0.5, ppMin * 0.5), 'auto'] : [0, 'auto']}
+                tick={{ fontSize: 9, fill: "#9ca3af" }}
+                tickFormatter={v => (v >= 10000 ? Number(v).toExponential(0) : String(v))} />
+              <Tooltip content={<TT labelFmt={l => `Decile ${String(l).replace(/^D/, "")}`} valueFmt={fmtMult} />} />
+              <ReferenceLine y={1} stroke="#9b2226" strokeDasharray="3 3" strokeWidth={1}
+                label={{ value: "pre-AGI parity (×1)", position: "insideTopRight", fontSize: 8, fill: "#9b2226" }} />
+              <Bar dataKey="multiple" fill={CHART_COLORS.output} name="× pre-AGI income" radius={[2, 2, 0, 0]}>
+                <LabelList dataKey="multiple" position="top" formatter={fmtMult} style={{ fontSize: 8, fill: "#4b5563" }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <p className="text-[9px] italic mt-1" style={{ color: "#9ca3af" }}>
+            One-good economy: real purchasing power = post-tax share of real output, so cheaper goods and higher income are both captured.
+            Bars above the red line mean that decile can consume more than it could pre-AGI. Tip: switch the value axis to log — under
+            high automation the multiples span several orders of magnitude across deciles.
+          </p>
         </div>
 
         {/* ── ASSESSMENT ── */}
