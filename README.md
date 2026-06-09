@@ -164,7 +164,7 @@ The model logic is separated from the UI so it can be exercised programmatically
 Run the tests with:
 
 ```
-npm test        # = node --test tests/
+npm test        # = node --test tests/*.test.mjs
 ```
 
 CI runs the tests before every deploy. To probe the model interactively, import it directly:
