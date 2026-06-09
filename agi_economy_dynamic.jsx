@@ -56,11 +56,11 @@ function Metric({ label, v0, vT, fmt, good }) {
   );
 }
 
-const TT = ({ active, payload, label }) => {
+const TT = ({ active, payload, label, labelFmt }) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded shadow-lg p-2 text-xs" style={{ backgroundColor: "#1a1a2e", color: "#e5e7eb", zIndex: 50 }}>
-      <div className="font-semibold mb-1" style={{ color: "#fbbf24" }}>Period {label}</div>
+      <div className="font-semibold mb-1" style={{ color: "#fbbf24" }}>{labelFmt ? labelFmt(label) : `Period ${label}`}</div>
       {payload.map((e, i) => (
         <div key={i} className="flex justify-between gap-3">
           <span style={{ color: e.color }}>{e.name}</span>
@@ -418,7 +418,7 @@ export default function AGIEconomyDynamic() {
               <CartesianGrid strokeDasharray="2 4" stroke="#e5e7eb" />
               <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#9ca3af" }} />
               <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} />
-              <Tooltip content={<TT />} />
+              <Tooltip content={<TT labelFmt={l => `Decile ${String(l).replace(/^D/, "")}`} />} />
               <Legend wrapperStyle={{ fontSize: 9 }}
                 formatter={v => v === "wages" ? "After-tax Wages" : v === "capital" ? "After-tax Capital Income" : "UBI / NIT Transfer"} />
               <Bar dataKey="wages" stackId="a" fill={CHART_COLORS.wages} name="wages" />
