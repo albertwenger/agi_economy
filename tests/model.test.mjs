@@ -173,6 +173,31 @@ test("purchasingPowerMultiples: one per decile, vs own period-0 income", () => {
   assert.ok(uto[0] > 100 * dys[0], "redistribution+competition multiplies bottom-decile gains");
 });
 
+test("flat-UBI mode: matches indexed NIT at period 0, then fades as growth outruns it", () => {
+  const p = { alphaTarget: 0.9, sigma: 1.8, N: 2, t: 0.4, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.9 };
+  const indexed = simulate(p);
+  const flat = simulate({ ...p, transferMode: "flat" });
+  const none = simulate({ ...p, t: 0 });
+
+  // Identical starting point: the flat amount is calibrated to the period-0 NIT transfer
+  approx(flat[0].tau, 0.4);
+  indexed[0].posttax.forEach((y, i) => approx(y, flat[0].posttax[i]));
+
+  // Budget balance holds every period under the endogenous funding rate
+  for (const h of flat) approx(h.posttax.reduce((a, b) => a + b, 0), h.Y, 1e-6);
+
+  // The funding rate collapses as the economy outgrows the fixed payment...
+  assert.ok(flat[T_PERIODS].tau < 1e-3, `tau_T = ${flat[T_PERIODS].tau}`);
+  // ...so the end state is laissez-faire, while the indexed NIT keeps compressing
+  assert.ok(Math.abs(flat[T_PERIODS].giniPost - none[T_PERIODS].giniPost) < 0.02);
+  assert.ok(indexed[T_PERIODS].giniPost < 0.3);
+  assert.ok(indexed[T_PERIODS].d1Post > 100 * flat[T_PERIODS].d1Post,
+    "indexed transfers leave the bottom decile orders of magnitude better off");
+
+  // Indexed mode reports its constant rate in tau for UI consumption
+  assert.ok(indexed.every(h => h.tau === 0.4));
+});
+
 // ── The thesis: 2×2 policy grid ──
 
 test("thesis 2×2: competition sets the size of the pie, redistribution sets who shares it", () => {

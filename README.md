@@ -68,6 +68,13 @@ y_net = (1−t)·y + t·ȳ
 
 Below-mean earners receive transfers; above-mean earners pay. Labor supply responds to both the tax rate (elasticity λ=0.25) and the automation share (as more tasks are automated, effective wages fall, reducing labor supply). This captures the compound effect of high automation + high redistribution on labor participation.
 
+**Transfer indexation.** The benefit side of the NIT is already a flat per-person amount within each period (everyone receives t·ȳ); what distinguishes policies is how that amount evolves. The model offers two modes:
+
+- **Indexed (NIT, default)** — the rate t is constant, so the transfer t·ȳ grows with mean income: a fixed *share* of the economy.
+- **Flat UBI** — the transfer is fixed in *real* terms at t × period-0 mean income, funded each period by the budget-balancing rate τ = 10B/Y. The modes coincide at period 0 and diverge only through indexation.
+
+Under AGI-scale growth the difference is dramatic: the flat UBI's funding rate collapses toward zero as the economy outgrows the fixed payment, so by the end of the simulation it redistributes essentially nothing — inequality converges to the laissez-faire path even though the floor it guarantees buys ever more as prices fall. What matters for sharing the abundance is not the level of the UBI but what it is indexed to.
+
 ### Prices and Real Purchasing Power
 
 The model shows two price lines, both normalized so the competitive price is 1 at t=0:
@@ -90,7 +97,8 @@ Real purchasing power is **not** computed by deflating income by this price inde
 | AI Productivity Growth | g_A | 0–15%/yr | Compound growth rate of AI capability |
 | Physical Bottleneck | γ | 0.5–1.0 | Returns to accumulated capital. γ=1: no limit (AK singularity); γ<1: tighter energy/compute/land constraint |
 | Competing Firms | N | 1–50 | Market structure: 1=monopoly, 50≈perfect competition |
-| NIT/UBI Rate | t | 0–60% | Negative income tax rate |
+| NIT/UBI Rate | t | 0–60% | Transfer generosity (share of mean income at period 0) |
+| Transfer Mode | — | indexed / flat | Indexed: transfer = t·ȳ forever. Flat: fixed real UBI calibrated at period 0, funding rate τ falls as the economy grows |
 | Wealth Concentration | θ | 0–5 | Initial capital distribution skewness |
 | Savings Spread | — | 0–3 | How much more the rich save vs. the poor |
 

@@ -98,6 +98,7 @@ const CHART_COLORS = {
 
 export default function AGIEconomyDynamic() {
   const [params, setParams] = useState({ ...DEFAULT_PRESET });
+  const mode = params.transferMode || "indexed";
   const [activePreset, setActivePreset] = useState("base");
   const [yScale, setYScale] = useState("linear"); // "linear" | "log" — toggles value-axis charts
   const set = useCallback((k, v) => { setActivePreset(null); setParams(p => ({ ...p, [k]: v })); }, []);
@@ -131,9 +132,9 @@ export default function AGIEconomyDynamic() {
     const capPool = (1 - h.laborShare) * h.Y;
     const meanY = h.Y / N_DECILES;
     return h.kFracs.map((f, i) => {
-      const wageComp = (1 - params.t) * wagePer;
-      const capComp = (1 - params.t) * capPool * f;
-      const ubiComp = params.t * meanY;
+      const wageComp = (1 - h.tau) * wagePer;
+      const capComp = (1 - h.tau) * capPool * f;
+      const ubiComp = h.tau * meanY;
       return {
         name: `D${i + 1}`,
         wages: +wageComp.toFixed(5),
@@ -142,7 +143,7 @@ export default function AGIEconomyDynamic() {
         total: +(wageComp + capComp + ubiComp).toFixed(5),
       };
     });
-  }, [hT, params.t]);
+  }, [hT]);
 
   // Purchasing power at T as a multiple of each decile's own pre-AGI (period 0) level
   const ppData = useMemo(() =>
@@ -187,8 +188,12 @@ export default function AGIEconomyDynamic() {
       lines.push(`Capital concentration intensifies: the top decile's capital share rises from ${topCapShare0}% to ${topCapShareT}%.`);
     }
 
+    if (mode === "flat" && params.t > 0) {
+      lines.push(`The UBI is fixed in real terms at its period-0 level, so its funding rate fades from ${(params.t * 100).toFixed(0)}% to ${(hT.tau * 100).toPrecision(2)}% as growth outruns the fixed payment — by the end it redistributes ${hT.tau < 0.01 * params.t ? "almost nothing; only indexing the transfer to mean income preserves a claim on the abundance" : "far less than at the start"}.`);
+    }
+
     return lines.join(" ");
-  }, [h0, hT, params.N, topCapShare0, topCapShareT]);
+  }, [h0, hT, params.N, params.t, mode, topCapShare0, topCapShareT]);
 
   const giniStatus = v => v > 0.5 ? "bad" : v > 0.35 ? "warn" : v < 0.25 ? "good" : "neutral";
   const priceStatus = v => v < 0.4 ? "good" : v > 1.0 ? "bad" : v < 0.7 ? "good" : "neutral";
@@ -252,9 +257,24 @@ export default function AGIEconomyDynamic() {
               </div>
               <div className="text-[8px] uppercase tracking-widest mb-2 mt-4 font-bold" style={{ color: "#9ca3af" }}>Redistribution Policy</div>
               <div className="flex flex-col gap-2.5">
+                <div className="flex gap-1">
+                  {[["indexed", "Indexed (NIT)"], ["flat", "Flat UBI"]].map(([m, lbl]) => (
+                    <button key={m} onClick={() => set("transferMode", m)}
+                      className="px-2 py-0.5 text-[10px] rounded-sm transition-all cursor-pointer border"
+                      style={{
+                        backgroundColor: mode === m ? "#1a1a2e" : "white",
+                        color: mode === m ? "#fbbf24" : "#4b5563",
+                        borderColor: mode === m ? "#1a1a2e" : "#d1d5db",
+                      }}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
                 <Slider label="NIT / UBI Rate t" value={params.t} min={0} max={0.6} step={0.01}
                   onChange={v => set("t", v)} fmt={v => `${(v * 100).toFixed(0)}%`}
-                  hint="y_net = (1−t)·y + t·ȳ, budget-balanced" />
+                  hint={mode === "flat"
+                    ? "UBI fixed in REAL terms at t × period-0 mean income; funded by the budget-balancing rate τ each period"
+                    : "y_net = (1−t)·y + t·ȳ — transfer indexed to mean income, budget-balanced"} />
               </div>
             </div>
             <div>
@@ -275,6 +295,7 @@ export default function AGIEconomyDynamic() {
                 <div className="flex justify-between"><span>AI Productivity:</span><span className="font-mono">{h0.A.toFixed(1)}× → {hT.A.toFixed(1)}×</span></div>
                 <div className="flex justify-between"><span>Capital Stock:</span><span className="font-mono">{h0.K.toFixed(2)} → {hT.K.toFixed(2)}</span></div>
                 <div className="flex justify-between"><span>Markup μ:</span><span className="font-mono">{hT.mu.toFixed(2)}×</span></div>
+                <div className="flex justify-between"><span>Funding rate τ:</span><span className="font-mono">{(h0.tau * 100).toFixed(0)}% → {(hT.tau * 100).toFixed(hT.tau < 0.001 && hT.tau > 0 ? 4 : 1)}%</span></div>
                 <div className="flex justify-between"><span>Top Decile K share:</span><span className="font-mono">{topCapShare0}% → {topCapShareT}%</span></div>
               </div>
             </div>
@@ -492,7 +513,7 @@ export default function AGIEconomyDynamic() {
               <p>k<sub>i,t+1</sub> = (1−δ)k<sub>i,t</sub> + s<sub>i</sub>·y<sup>net</sup><sub>i,t</sub>. Depreciation δ={DEPRECIATION}. Savings rate s<sub>i</sub> = {(S_BASE*100).toFixed(0)}% × (1 + spread × rank/10). Richer deciles save more → capital concentrates endogenously.</p>
 
               <p className="font-bold mt-1.5 mb-0.5" style={{ color: "#1a1a2e" }}>Negative Income Tax</p>
-              <p>y<sup>net</sup> = (1−t)·y + t·ȳ. Budget-balanced. Labor response: L = (1−λt)·(1−α)<sup>0.3</sup>, λ=0.25 — both the tax and automation (falling effective wages) reduce labor supply.</p>
+              <p>y<sup>net</sup> = (1−t)·y + t·ȳ. Budget-balanced. Labor response: L = (1−λt)·(1−α)<sup>0.3</sup>, λ=0.25 — both the tax and automation (falling effective wages) reduce labor supply. Two transfer modes: <em>Indexed (NIT)</em> keeps rate t constant, so the per-person transfer t·ȳ grows with the economy; <em>Flat UBI</em> fixes the transfer in real terms at t × period-0 mean income, funded by the budget-balancing rate τ = 10B/Y, which collapses toward zero as the economy outgrows the fixed payment.</p>
 
               <p className="font-bold mt-1.5 mb-0.5" style={{ color: "#1a1a2e" }}>Key Mechanisms</p>
               <p>Competition (↑N) → lower μ → productivity gains reach consumers as lower prices (not profits), less rent extraction, and a larger real pie (less DWL). NIT (↑t) → gives displaced labor a claim on output and slows differential capital accumulation. Competition sets the size of the pie; redistribution sets who shares it — both are needed.</p>

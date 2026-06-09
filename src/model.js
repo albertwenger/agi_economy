@@ -97,7 +97,7 @@ export function equilibrium(alpha, sigma, N, t, A, K_total, kFracs, gamma) {
 
 // ── Dynamic simulation ──
 
-export function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread, gamma }) {
+export function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread, gamma, transferMode = "indexed" }) {
   // Initial capital distribution
   const kRaw0 = Array.from({ length: N_DECILES }, (_, i) => Math.pow(i + 1, theta));
   const kSum0 = kRaw0.reduce((a, b) => a + b, 0);
@@ -115,6 +115,8 @@ export function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread, g
   );
 
   const history = [];
+  let B_flat = 0;     // flat-UBI real amount per decile, set from the period-0 equilibrium
+  let tauPrev = t;
 
   for (let tp = 0; tp <= T_PERIODS; tp++) {
     // Logistic automation path
@@ -125,13 +127,31 @@ export function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread, g
     const K_total = kAbs.reduce((a, b) => a + b, 0);
     const kFracs = kAbs.map(k => k / Math.max(K_total, 1e-10));
 
-    const eq = equilibrium(alpha_t, sigma, N, t, A_t, K_total, kFracs, gamma);
+    // Transfer rate. Indexed (NIT): constant rate t, so the per-person transfer
+    // t·ȳ rides mean income. Flat UBI: fixed REAL amount B = t × period-0 mean
+    // income, funded each period by the budget-balancing rate τ = 10B/Y (capped).
+    // Since τ·ȳ = B, the NIT formula evaluated at τ IS the flat UBI — the modes
+    // coincide at period 0 and diverge only through indexation. τ feeds back on
+    // labor supply and hence Y, so solve the small τ→Y→τ fixed point.
+    let tau = t;
+    if (transferMode === "flat" && tp > 0) {
+      tau = tauPrev;
+      for (let it = 0; it < 8; it++) {
+        const e = equilibrium(alpha_t, sigma, N, tau, A_t, K_total, kFracs, gamma);
+        tau = Math.min(N_DECILES * B_flat / Math.max(e.Y, 1e-10), 0.95);
+      }
+    }
+
+    const eq = equilibrium(alpha_t, sigma, N, tau, A_t, K_total, kFracs, gamma);
+    if (tp === 0) B_flat = t * eq.Y / N_DECILES;
+    tauPrev = tau;
 
     const rec = {
       period: tp,
       alpha: alpha_t,
       A: A_t,
       K: K_total,
+      tau,
       Y: eq.Y,
       laborShare: eq.laborShare,
       mu: eq.mu,
