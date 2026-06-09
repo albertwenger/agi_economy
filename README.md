@@ -92,7 +92,7 @@ P_actual,t      = μ_t · 1 / Z_t    (the markup-inclusive price people actually
 
 where Z_t is productivity. The competitive price always falls as productivity grows ("everything gets cheap"), but whether the *actual* price follows it down is decided by pass-through: under competition the two lines fall together a thin wedge apart, while under market power the actual price stays roughly flat as μ_t compounds — the **widening gap between the lines is the productivity gain captured as profit rather than passed to consumers**.
 
-Real purchasing power is **not** computed by deflating income by this price index. In a one-good economy each decile's real consumption is simply its share of real output, so post-tax income already *is* real purchasing power — deflating it again would double-count productivity. Competition raises everyone's real income through two channels instead: a larger real pie (less deadweight loss) and a smaller share of output diverted to monopoly rents.
+Real purchasing power is **not** computed by deflating income by this price index. In a one-good economy each decile's real consumption is simply its share of real output, so post-tax income already *is* real purchasing power — deflating it again would double-count productivity. Competition raises everyone's real income through two channels instead: a larger real pie (the deadweight loss compounds with the markup, so low pass-through chokes output growth itself) and a smaller share of output diverted to monopoly rents. The exception is the flat UBI, which is fixed in money terms — its real value is computed off the actual price level, which is what makes it competition-dependent.
 
 ## Parameters
 
@@ -104,9 +104,9 @@ Real purchasing power is **not** computed by deflating income by this price inde
 | Physical Bottleneck | γ | 0.5–1.0 | Returns to accumulated capital. γ=1: no limit (AK singularity); γ<1: tighter energy/compute/land constraint |
 | Competing Firms | N | 1–50 | Market structure and pass-through: 1=monopoly (prices never fall), 50≈perfect competition (gains go to prices) |
 | NIT/UBI Rate | t | 0–60% | Transfer generosity (share of mean income at period 0) |
-| Transfer Mode | — | indexed / flat | Indexed: transfer = t·ȳ forever. Flat: fixed real UBI calibrated at period 0, funding rate τ falls as the economy grows |
+| Transfer Mode | — | indexed / flat | Indexed: transfer = t·ȳ forever. Flat: UBI fixed in money terms at the period-0 level — buys more only as prices fall (i.e. only with competition) |
 | Wealth Concentration | θ | 0–5 | Initial capital distribution skewness |
-| Savings Spread | — | 0–3 | How much more the rich save vs. the poor |
+| Savings Spread | — | 0–3 | Tilts savings rates around the 12% base: rich save more, poor save less; at ≥1 the bottom decile saves nothing |
 
 ## Scenarios
 
@@ -173,9 +173,9 @@ Contributions addressing any of these are welcome.
 
 The model logic is separated from the UI so it can be exercised programmatically:
 
-- **`src/model.js`** — the pure model: constants, `equilibrium()` (single-period CES production, Cournot markup, NIT), `simulate()` (the 40-period dynamic path), `gini()`, and the scenario presets. No UI dependencies; runs in plain Node.
+- **`src/model.js`** — the pure model: constants, `equilibrium()` (single-period CES production, Cournot + pass-through markup, NIT), `simulate()` (the 40-period dynamic path with both transfer modes), `gini()`, `purchasingPowerMultiples()`, and the scenario presets. No UI dependencies; runs in plain Node.
 - **`agi_economy_dynamic.jsx`** — the interactive React UI, which imports the model.
-- **`tests/model.test.mjs`** — the test harness, using Node's built-in test runner (no extra dependencies). It checks accounting identities (incomes exhaust output, budget-balanced NIT, price-line consistency), comparative statics (markup falls with N, labor share falls with α, γ bounds accumulation, redistribution slows capital concentration), and the headline 2×2 thesis result.
+- **`tests/model.test.mjs`** — the test harness, using Node's built-in test runner (no extra dependencies). It checks accounting identities (incomes exhaust output, budget-balanced transfers under both modes, price-line consistency), comparative statics (markup and pass-through vs N, labor share vs α, γ bounds accumulation, redistribution slows capital concentration), and the headline results: monopoly freezes prices while competition forces them to cost, a flat UBI works only under competition, and the preset 2×2 (from the immiserated bottom decile in Dystopia to abundance in Utopia).
 
 Run the tests with:
 
@@ -187,7 +187,8 @@ CI runs the tests before every deploy. To probe the model interactively, import 
 
 ```js
 import { simulate, PRESETS } from "./src/model.js";
-const history = simulate({ ...PRESETS[1], t: 0.2 }); // AI Dystopia + 20% NIT
+// AI Dystopia, but with a 20% indexed NIT layered on
+const history = simulate({ ...PRESETS[1], t: 0.2, transferMode: "indexed" });
 console.log(history[40].giniPost);
 ```
 
