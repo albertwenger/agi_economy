@@ -19,7 +19,7 @@ The model combines four building blocks, each grounded in the academic literatur
 Following [Acemoglu & Restrepo (2022)](https://ideas.repec.org/a/wly/emetrp/v90y2022i5p1973-2016.html), output is produced by combining automated and labor tasks via a CES aggregator:
 
 ```
-Y = [α^(1/σ) · (A·K^γ)^ρ + (1−α)^(1/σ) · L^ρ]^(1/ρ) / μ^0.1
+Y = [α^(1/σ) · (A·K^γ)^ρ + (1−α)^(1/σ) · L^ρ]^(1/ρ) / μ^0.7
 ```
 
 - **α** — share of tasks automated by AI-capital
@@ -142,7 +142,7 @@ This is a first-cut model for building intuition, not a calibrated forecasting t
 
 - **Flat tax, no evasion**: The NIT taxes all income uniformly and assumes full compliance. Progressive rates, differential treatment of capital vs. labor income, and capital's greater ability to avoid taxation (offshore structuring, tokenized/digital assets) would better capture real policy options and would tend to amplify inequality beyond what the model shows.
 - **σ-isolated labor supply**: Labor supply responds to the tax rate (elasticity λ=0.25) and to a proxy for automation `(1−α)`, but not to the *realized* equilibrium wage, which embeds the substitutability σ. As a result, high substitutability and high redistribution do not compound on labor supply as strongly as a fully wage-responsive labor-supply curve (solving the wage↔labor fixed point) would imply.
-- **Small deadweight-loss exponent**: Market power enters chiefly as a *distributional* distortion — it compresses the labor share (`s_L/μ`) and routes rents to capital — while the efficiency loss is deliberately mild (`Y/μ^0.1`). Under duopoly this means output stays high; a larger exponent would model more aggressive monopoly output distortions.
+- **Reduced-form deadweight loss**: The output cost of market power is the ad-hoc wedge `Y/μ^0.7` rather than being derived from the demand system and Cournot quantities. The exponent is a calibration choice — large enough that monopoly meaningfully shrinks the real pie — but the true mapping from concentration to output loss would follow from an explicit demand curve.
 - **No capital ownership broadening**: Sovereign wealth funds, stakeholder ownership, and broad-based equity participation are arguably a third policy dimension not yet modeled.
 - **Exogenous market structure**: AI may itself drive concentration through economies of scale in training and data. Endogenizing N as a function of AI capability would capture this self-reinforcing dynamic.
 - **Aggregate, not sectoral, bottleneck**: The physical bottleneck γ imposes economy-wide diminishing returns to capital, but the model still doesn't capture *sector-level* heterogeneity in automation difficulty (the full Baumol / Aghion-Jones-Jones mechanism, where slow-to-automate sectors come to dominate value added).
@@ -150,6 +150,28 @@ This is a first-cut model for building intuition, not a calibrated forecasting t
 - **No international dimension**: Trade and cross-border capital flows matter for how AI's distributional effects play out globally.
 
 Contributions addressing any of these are welcome.
+
+## Code Layout and Tests
+
+The model logic is separated from the UI so it can be exercised programmatically:
+
+- **`src/model.js`** — the pure model: constants, `equilibrium()` (single-period CES production, Cournot markup, NIT), `simulate()` (the 40-period dynamic path), `gini()`, and the scenario presets. No UI dependencies; runs in plain Node.
+- **`agi_economy_dynamic.jsx`** — the interactive React UI, which imports the model.
+- **`tests/model.test.mjs`** — the test harness, using Node's built-in test runner (no extra dependencies). It checks accounting identities (incomes exhaust output, budget-balanced NIT, price-line consistency), comparative statics (markup falls with N, labor share falls with α, γ bounds accumulation, redistribution slows capital concentration), and the headline 2×2 thesis result.
+
+Run the tests with:
+
+```
+npm test        # = node --test tests/
+```
+
+CI runs the tests before every deploy. To probe the model interactively, import it directly:
+
+```js
+import { simulate, PRESETS } from "./src/model.js";
+const history = simulate({ ...PRESETS[1], t: 0.2 }); // AI Dystopia + 20% NIT
+console.log(history[40].giniPost);
+```
 
 ## Contributing
 
