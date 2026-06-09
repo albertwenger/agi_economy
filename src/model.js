@@ -32,8 +32,7 @@ export function gini(arr) {
 
 // ── Single-period equilibrium ──
 
-export function equilibrium(alpha, sigma, N, t, A, K_total, kFracs, gamma) {
-  const mu = (N * DEMAND_EPS) / Math.max(N * DEMAND_EPS - 1, 0.01);
+export function equilibrium(alpha, sigma, N, t, A, K_total, kFracs, gamma, zRef = null) {
   // Labor supply responds to both tax disincentive AND wage level
   // When alpha is high (lots of automation), effective wages fall, reducing labor supply
   const taxEffect = 1 - LAMBDA_TAX * t;
@@ -76,6 +75,21 @@ export function equilibrium(alpha, sigma, N, t, A, K_total, kFracs, gamma) {
     }
   }
 
+  // TFP = Y_pot / f(K,L) — markup-free, used for the price index and as the
+  // productivity reference for markup dynamics
+  const tfp = Y_pot / Math.max(Math.pow(Kcap, alpha) * Math.pow(L, 1 - alpha), 1e-10);
+  const productivity = tfp;
+
+  // Markup with pass-through dynamics. The static Cournot level muBase is the
+  // STARTING markup; what happens to productivity gains is then governed by
+  // competition:  mu_t = muBase · (Z_t/Z_0)^(1/N).
+  // N=1: the price never falls — every cost decline accrues as profit. Large N:
+  // rivals force gains through to prices and the markup stays at its Cournot
+  // level. zRef is period-0 TFP (null at period 0 itself → mu = muBase).
+  const muBase = (N * DEMAND_EPS) / Math.max(N * DEMAND_EPS - 1, 0.01);
+  const zRatio = zRef ? Math.max(tfp / zRef, 1e-10) : 1;
+  const mu = Math.max(muBase * Math.pow(zRatio, 1 / N), 1.0001);
+
   const Y = Y_pot / Math.pow(mu, DWL_EXP);
   const laborShare = s_L / mu;
   const wagePool = laborShare * Y;
@@ -86,10 +100,7 @@ export function equilibrium(alpha, sigma, N, t, A, K_total, kFracs, gamma) {
   const pretax = kFracs.map(f => wagePer + capitalPool * f);
   const posttax = pretax.map(y => (1 - t) * y + t * meanY);
 
-  // Price index: markup × unit cost, where unit cost ∝ 1/TFP
-  // TFP = Y_pot / f(K,L) — use Y_pot before markup for clean separation
-  const tfp = Y_pot / Math.max(Math.pow(Kcap, alpha) * Math.pow(L, 1 - alpha), 1e-10);
-  const productivity = tfp;
+  // Price: markup × unit cost, where unit cost ∝ 1/TFP
   const priceRaw = mu / Math.max(tfp, 1e-10);
 
   return { Y, mu, laborShare, L, wagePool, capitalPool, pretax, posttax, priceRaw, meanY, productivity };
@@ -115,7 +126,9 @@ export function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread, g
   );
 
   const history = [];
-  let B_flat = 0;     // flat-UBI real amount per decile, set from the period-0 equilibrium
+  let z0 = null;      // period-0 TFP: reference for markup pass-through dynamics
+  let p0raw = null;   // period-0 price level: reference for the nominal-fixed UBI
+  let B_flat = 0;     // flat-UBI NOMINAL amount per decile, set from the period-0 equilibrium
   let tauPrev = t;
 
   for (let tp = 0; tp <= T_PERIODS; tp++) {
@@ -128,22 +141,30 @@ export function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread, g
     const kFracs = kAbs.map(k => k / Math.max(K_total, 1e-10));
 
     // Transfer rate. Indexed (NIT): constant rate t, so the per-person transfer
-    // t·ȳ rides mean income. Flat UBI: fixed REAL amount B = t × period-0 mean
-    // income, funded each period by the budget-balancing rate τ = 10B/Y (capped).
-    // Since τ·ȳ = B, the NIT formula evaluated at τ IS the flat UBI — the modes
-    // coincide at period 0 and diverge only through indexation. τ feeds back on
-    // labor supply and hence Y, so solve the small τ→Y→τ fixed point.
+    // t·ȳ rides mean income. Flat UBI: fixed NOMINAL amount, calibrated so it
+    // equals the NIT transfer at period 0. Its real value is B_flat·(P_0/P_t) —
+    // it buys more only as prices actually fall, which is what competition's
+    // pass-through controls. Funded each period by the budget-balancing rate
+    // τ = 10·B_real/Y (capped). Since τ·ȳ = B_real, the NIT formula evaluated
+    // at τ IS the flat UBI — the modes coincide at period 0 and diverge only
+    // through indexation. τ feeds back on labor supply and hence Y, so solve
+    // the small τ→Y→τ fixed point.
     let tau = t;
     if (transferMode === "flat" && tp > 0) {
       tau = tauPrev;
       for (let it = 0; it < 8; it++) {
-        const e = equilibrium(alpha_t, sigma, N, tau, A_t, K_total, kFracs, gamma);
-        tau = Math.min(N_DECILES * B_flat / Math.max(e.Y, 1e-10), 0.95);
+        const e = equilibrium(alpha_t, sigma, N, tau, A_t, K_total, kFracs, gamma, z0);
+        const B_real = B_flat * (p0raw / Math.max(e.priceRaw, 1e-10));
+        tau = Math.min(N_DECILES * B_real / Math.max(e.Y, 1e-10), 0.95);
       }
     }
 
-    const eq = equilibrium(alpha_t, sigma, N, tau, A_t, K_total, kFracs, gamma);
-    if (tp === 0) B_flat = t * eq.Y / N_DECILES;
+    const eq = equilibrium(alpha_t, sigma, N, tau, A_t, K_total, kFracs, gamma, z0);
+    if (tp === 0) {
+      z0 = eq.productivity;
+      p0raw = eq.priceRaw;
+      B_flat = t * eq.Y / N_DECILES;
+    }
     tauPrev = tau;
 
     const rec = {
@@ -182,11 +203,11 @@ export function simulate({ alphaTarget, sigma, N, t, theta, gA, savingsSpread, g
   // Price index, split into two lines, both normalized so the COMPETITIVE price
   // (marginal cost = 1/Z) is 1 at t=0:
   //   priceComp   = Z_0 / Z_t           — what prices would be under competition
-  //   priceActual = μ · priceComp       — actual markup-inclusive price
+  //   priceActual = μ_t · priceComp     — actual markup-inclusive price
   // The gap between them is the productivity gain captured as profit instead of
-  // passed to consumers as lower prices. (The markup μ no longer cancels out, as
-  // it did in the old single normalized index.)
-  const z0 = history[0].productivity;
+  // passed to consumers as lower prices. With pass-through dynamics the gap
+  // WIDENS over time under market power (μ_t grows as gains are kept as profit)
+  // and stays at the small Cournot wedge under competition.
   history.forEach(h => {
     h.priceComp = z0 / Math.max(h.productivity, 1e-10);
     h.priceActual = h.mu * h.priceComp;

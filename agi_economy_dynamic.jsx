@@ -189,7 +189,8 @@ export default function AGIEconomyDynamic() {
     }
 
     if (mode === "flat" && params.t > 0) {
-      lines.push(`The UBI is fixed in real terms at its period-0 level, so its funding rate fades from ${(params.t * 100).toFixed(0)}% to ${(hT.tau * 100).toPrecision(2)}% as growth outruns the fixed payment — by the end it redistributes ${hT.tau < 0.01 * params.t ? "almost nothing; only indexing the transfer to mean income preserves a claim on the abundance" : "far less than at the start"}.`);
+      const priceFall = h0.priceActual / Math.max(hT.priceActual, 1e-10);
+      lines.push(`The UBI is fixed in money terms: its real value ${priceFall > 1.5 ? `grows ${priceFall.toFixed(0)}× as competition pushes prices down` : "stays frozen because market power keeps prices from falling"}, while its funding rate fades from ${(params.t * 100).toFixed(0)}% to ${(hT.tau * 100).toPrecision(2)}%. ${priceFall > 1.5 ? "Falling prices, not transfers, do the work — a flat UBI rides deflation only where competition forces prices toward cost." : "With no pass-through, a flat UBI buys the same basket forever while the owners of capital pull away."}`);
     }
 
     return lines.join(" ");
@@ -253,7 +254,7 @@ export default function AGIEconomyDynamic() {
               <div className="flex flex-col gap-2.5">
                 <Slider label="Competing Firms N" value={params.N} min={1} max={50} step={1}
                   onChange={v => set("N", v)} fmt={v => v}
-                  hint="N=1 monopoly → N=50 competitive" />
+                  hint="Sets pass-through: N=1 keeps all productivity gains as profit (prices never fall); N=50 forces them into prices" />
               </div>
               <div className="text-[8px] uppercase tracking-widest mb-2 mt-4 font-bold" style={{ color: "#9ca3af" }}>Redistribution Policy</div>
               <div className="flex flex-col gap-2.5">
@@ -273,7 +274,7 @@ export default function AGIEconomyDynamic() {
                 <Slider label="NIT / UBI Rate t" value={params.t} min={0} max={0.6} step={0.01}
                   onChange={v => set("t", v)} fmt={v => `${(v * 100).toFixed(0)}%`}
                   hint={mode === "flat"
-                    ? "UBI fixed in REAL terms at t × period-0 mean income; funded by the budget-balancing rate τ each period"
+                    ? "UBI fixed in MONEY terms (= NIT transfer at period 0); buys more only as competition pushes prices down"
                     : "y_net = (1−t)·y + t·ȳ — transfer indexed to mean income, budget-balanced"} />
               </div>
             </div>
@@ -502,11 +503,11 @@ export default function AGIEconomyDynamic() {
               <p className="font-bold mb-0.5" style={{ color: "#1a1a2e" }}>Production (CES task framework)</p>
               <p>Y = [α<sup>1/σ</sup>(A·K<sup>γ</sup>)<sup>ρ</sup> + (1−α)<sup>1/σ</sup>L<sup>ρ</sup>]<sup>1/ρ</sup> / μ<sup>0.7</sup>. Automation α ramps logistically from 30% toward target. AI productivity A grows at rate g<sub>A</sub>. Physical bottleneck γ&lt;1 imposes diminishing returns to capital (a fixed energy/compute/land factor); γ=1 is an AK economy that has no balanced path when σ&gt;1.</p>
 
-              <p className="font-bold mt-1.5 mb-0.5" style={{ color: "#1a1a2e" }}>Market Power (Cournot)</p>
-              <p>Markup μ = Nε/(Nε−1), ε=2. Effective labor share = s<sub>L</sub>/μ. DWL factor μ<sup>0.7</sup> reduces output below potential — competition grows the real pie. Profit share (1−1/μ)·Y flows to capital owners by holdings.</p>
+              <p className="font-bold mt-1.5 mb-0.5" style={{ color: "#1a1a2e" }}>Market Power (Cournot + Pass-Through)</p>
+              <p>Starting markup μ<sub>0</sub> = Nε/(Nε−1), ε=2. Competition then decides where productivity gains go: μ<sub>t</sub> = μ<sub>0</sub>·(Z<sub>t</sub>/Z<sub>0</sub>)<sup>1/N</sup>. N=1: prices never fall, every gain becomes profit; large N: rivals force gains into prices and μ stays at its Cournot level. Effective labor share = s<sub>L</sub>/μ. DWL factor μ<sup>0.7</sup> reduces output below potential. Profit share (1−1/μ)·Y flows to capital owners by holdings.</p>
 
               <p className="font-bold mt-1.5 mb-0.5" style={{ color: "#1a1a2e" }}>Prices &amp; Real Income</p>
-              <p>Two price lines, both normalized so the competitive price (marginal cost ∝ 1/productivity) = 1 at t=0: <em>competitive</em> = 1/Z and <em>actual</em> = μ/Z. Their gap is the productivity gain captured as profit rather than passed to consumers. Real purchasing power is each decile's post-tax share of real output (one good ⇒ no separate deflation).</p>
+              <p>Two price lines, both normalized so the competitive price (marginal cost ∝ 1/productivity) = 1 at t=0: <em>competitive</em> = 1/Z and <em>actual</em> = μ<sub>t</sub>/Z. Their gap — the productivity gain captured as profit rather than passed to consumers — now <em>widens over time</em> under market power and stays a thin wedge under competition. Real purchasing power is each decile's post-tax share of real output (one good ⇒ no separate deflation).</p>
             </div>
             <div>
               <p className="font-bold mb-0.5" style={{ color: "#1a1a2e" }}>Capital Dynamics</p>

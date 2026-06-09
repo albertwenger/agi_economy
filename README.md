@@ -34,17 +34,23 @@ A subtlety of this share-weight normalization: as σ→1 the aggregator converge
 
 **Physical bottleneck (γ).** Capital enters as `K^γ` rather than `K`. With γ=1 and σ>1 the model is an AK economy — capital and labor are gross substitutes with no diminishing returns, so accumulation has no balanced growth path (Uzawa's theorem) and output, capital, and real incomes diverge super-exponentially toward a finite-time singularity. Setting γ<1 represents a fixed complementary factor that AI cannot accumulate its way around — energy, compute, land, raw materials — which restores a stationary capital–output ratio and keeps the economy on a balanced growth path for any σ. Lower γ means a tighter physical constraint; γ=1 reproduces the unbounded "singularity" regime. The default is γ=0.90.
 
-### 2. Market Power (Cournot Competition)
+### 2. Market Power (Cournot + Pass-Through)
 
-N symmetric firms compete with demand elasticity ε=2, yielding markup:
+N symmetric firms compete with demand elasticity ε=2, setting the *starting* markup:
 
 ```
-μ = Nε / (Nε − 1)
+μ₀ = Nε / (Nε − 1)
 ```
 
-The markup compresses the effective labor share (workers receive s_L/μ of output) and creates deadweight loss (Y_actual = Y_potential / μ^0.7). Monopoly rents (1 − 1/μ)·Y flow to capital owners proportional to their capital holdings.
+Competition then determines what happens to productivity gains over time. The markup evolves as
 
-This captures the core policy insight: **without competition, instead of prices falling, profits rise.** A given productivity gain shows up as a falling unit cost; the markup decides whether that saving reaches consumers as a lower price (competition, μ→1) or is captured as profit that accrues to concentrated capital ownership (monopoly). The deadweight-loss exponent of 0.7 means monopoly also meaningfully shrinks the real pie — so competition does double duty: it both passes gains to consumers *and* makes the total output larger. N is treated as exogenous because it is subject to policy (antitrust, regulation, open standards).
+```
+μ_t = μ₀ · (Z_t / Z_0)^(1/N)
+```
+
+where Z is productivity. Under monopoly (N=1) the exponent is 1: the price never falls — every cost decline accrues as profit, and the markup compounds with productivity. With many firms the exponent → 0: rivals force the gains through to prices and the markup stays pinned near its Cournot level. This makes the core policy insight literal rather than rhetorical: **without competition, instead of prices falling, profits rise** — under high market power the consumer price stays where it started while marginal cost collapses underneath it.
+
+The markup compresses the effective labor share (workers receive s_L/μ of output) and creates deadweight loss (Y_actual = Y_potential / μ^0.7), which now *grows* under market power as μ_t compounds — concentrated markets choke output, not just redistribute it. Monopoly rents (1 − 1/μ)·Y flow to capital owners proportional to their capital holdings. N is treated as exogenous because it is subject to policy (antitrust, regulation, open standards); the pass-through exponent 1/N is a reduced form for how rivalry disciplines pricing.
 
 ### 3. Capital Dynamics (Heterogeneous Agents)
 
@@ -71,9 +77,9 @@ Below-mean earners receive transfers; above-mean earners pay. Labor supply respo
 **Transfer indexation.** The benefit side of the NIT is already a flat per-person amount within each period (everyone receives t·ȳ); what distinguishes policies is how that amount evolves. The model offers two modes:
 
 - **Indexed (NIT, default)** — the rate t is constant, so the transfer t·ȳ grows with mean income: a fixed *share* of the economy.
-- **Flat UBI** — the transfer is fixed in *real* terms at t × period-0 mean income, funded each period by the budget-balancing rate τ = 10B/Y. The modes coincide at period 0 and diverge only through indexation.
+- **Flat UBI** — the transfer is fixed in *money* terms, calibrated to equal the NIT transfer at period 0. Its real value is B·(P₀/P_t): it buys more only as prices actually fall. Funded each period by the budget-balancing rate τ.
 
-Under AGI-scale growth the difference is dramatic: the flat UBI's funding rate collapses toward zero as the economy outgrows the fixed payment, so by the end of the simulation it redistributes essentially nothing — inequality converges to the laissez-faire path even though the floor it guarantees buys ever more as prices fall. What matters for sharing the abundance is not the level of the UBI but what it is indexed to.
+The two modes coincide at period 0 and diverge only through indexation — and the flat UBI's fate then hinges entirely on competition, via pass-through. Under market power prices never fall, so the flat UBI buys the same basket forever while the owners of capital pull away. Under competition, collapsing prices do the indexing for free: the same fixed payment rides deflation to many times its original purchasing power. A flat UBI is a bet on competition; only the indexed transfer (a fixed share of the economy) compresses *relative* inequality, since even a deflation-riding UBI grows with productivity while mean income grows with productivity *and* capital accumulation.
 
 ### Prices and Real Purchasing Power
 
@@ -81,10 +87,10 @@ The model shows two price lines, both normalized so the competitive price is 1 a
 
 ```
 P_competitive,t = 1 / Z_t          (marginal cost; what prices would be under competition)
-P_actual,t      = μ · 1 / Z_t      (the markup-inclusive price people actually pay)
+P_actual,t      = μ_t · 1 / Z_t    (the markup-inclusive price people actually pay)
 ```
 
-where Z_t is productivity. Both fall as productivity grows ("everything gets cheap"), but the **gap between them is the productivity gain captured as profit rather than passed to consumers** — it widens with the markup and vanishes under competition. (On a log axis the two lines sit a constant distance μ apart.)
+where Z_t is productivity. The competitive price always falls as productivity grows ("everything gets cheap"), but whether the *actual* price follows it down is decided by pass-through: under competition the two lines fall together a thin wedge apart, while under market power the actual price stays roughly flat as μ_t compounds — the **widening gap between the lines is the productivity gain captured as profit rather than passed to consumers**.
 
 Real purchasing power is **not** computed by deflating income by this price index. In a one-good economy each decile's real consumption is simply its share of real output, so post-tax income already *is* real purchasing power — deflating it again would double-count productivity. Competition raises everyone's real income through two channels instead: a larger real pie (less deadweight loss) and a smaller share of output diverted to monopoly rents.
 
@@ -96,7 +102,7 @@ Real purchasing power is **not** computed by deflating income by this price inde
 | Substitutability | σ | 0.3–3.0 | σ>1: easy to replace labor; σ<1: labor is bottleneck |
 | AI Productivity Growth | g_A | 0–15%/yr | Compound growth rate of AI capability |
 | Physical Bottleneck | γ | 0.5–1.0 | Returns to accumulated capital. γ=1: no limit (AK singularity); γ<1: tighter energy/compute/land constraint |
-| Competing Firms | N | 1–50 | Market structure: 1=monopoly, 50≈perfect competition |
+| Competing Firms | N | 1–50 | Market structure and pass-through: 1=monopoly (prices never fall), 50≈perfect competition (gains go to prices) |
 | NIT/UBI Rate | t | 0–60% | Transfer generosity (share of mean income at period 0) |
 | Transfer Mode | — | indexed / flat | Indexed: transfer = t·ȳ forever. Flat: fixed real UBI calibrated at period 0, funding rate τ falls as the economy grows |
 | Wealth Concentration | θ | 0–5 | Initial capital distribution skewness |
@@ -109,7 +115,7 @@ Five presets illustrate the range of outcomes:
 | Preset | α | σ | N | t | Key Outcome |
 |--------|---|---|---|---|-------------|
 | **Today's Trajectory** | 50% | 1.0 | 12 | 10% | Moderate growth, slowly rising inequality |
-| **AI Dystopia** | 90% | 1.8 | 2 | 0% | Output soars but rents flow to capital; the bottom decile is left far behind |
+| **AI Dystopia** | 90% | 1.8 | 2 | 0% | Prices barely fall as markups compound; output is choked and rents flow to capital; the bottom decile is left far behind |
 | **AI Utopia** | 90% | 1.8 | 30 | 30% | Broadly shared prosperity — a large, cheap pie and a fair share of it |
 | **Redistribution Only** | 90% | 1.8 | 2 | 40% | Inequality compressed, but the pie is shrunk and skimmed by monopoly rents |
 | **Competition Only** | 90% | 1.8 | 30 | 0% | Bigger, cheaper pie, but the unwaged bottom decile is excluded from it |
@@ -120,7 +126,7 @@ Neither competition nor redistribution alone is sufficient — they do different
 
 - *Competition without redistribution* produces a large, cheap-goods economy, but a fully automated one in which displaced workers have no wage and little capital — they are excluded from the abundance. Inequality stays extreme.
 - *Redistribution without competition* gives everyone a claim on output, but it is a claim on a pie that monopoly has shrunk (deadweight loss) and skimmed (rents to concentrated capital). The bottom decile's real income is a fraction of what it could be.
-- *The combination* gives displaced workers both a share and a large pie to share: in the model, adding competition to a fully-redistributive economy still multiplies the bottom decile's real income several-fold, while redistribution is what compresses inequality in the first place.
+- *The combination* gives displaced workers both a share and a large pie to share: in the model, adding competition to a fully-redistributive economy multiplies the bottom decile's real income by orders of magnitude (monopoly now chokes the pie's growth, not just its level), while redistribution is what compresses inequality in the first place.
 
 This is the intuition that without competition, productivity gains become profits rather than lower prices — income flows to the owners of capital while labor, its wages driven down or automated away, is left unable to afford the abundance unless redistribution gives it a claim and competition keeps that claim valuable.
 
@@ -153,6 +159,7 @@ This is a first-cut model for building intuition, not a calibrated forecasting t
 - **Flat tax, no evasion**: The NIT taxes all income uniformly and assumes full compliance. Progressive rates, differential treatment of capital vs. labor income, and capital's greater ability to avoid taxation (offshore structuring, tokenized/digital assets) would better capture real policy options and would tend to amplify inequality beyond what the model shows.
 - **σ-isolated labor supply**: Labor supply responds to the tax rate (elasticity λ=0.25) and to a proxy for automation `(1−α)`, but not to the *realized* equilibrium wage, which embeds the substitutability σ. As a result, high substitutability and high redistribution do not compound on labor supply as strongly as a fully wage-responsive labor-supply curve (solving the wage↔labor fixed point) would imply.
 - **Reduced-form deadweight loss**: The output cost of market power is the ad-hoc wedge `Y/μ^0.7` rather than being derived from the demand system and Cournot quantities. The exponent is a calibration choice — large enough that monopoly meaningfully shrinks the real pie — but the true mapping from concentration to output loss would follow from an explicit demand curve.
+- **Reduced-form pass-through**: The markup dynamics `μ_t = μ₀·(Z_t/Z_0)^(1/N)` impose that a monopolist keeps all productivity gains as profit and a perfectly competitive market keeps none, with `1/N` interpolating between them. A structural treatment would derive pass-through from demand curvature, entry threats, and the durability of the technology lead; a profit-maximizing monopolist facing isoelastic demand would not literally hold prices fixed forever.
 - **No capital ownership broadening**: Sovereign wealth funds, stakeholder ownership, and broad-based equity participation are arguably a third policy dimension not yet modeled.
 - **Exogenous market structure**: AI may itself drive concentration through economies of scale in training and data. Endogenizing N as a function of AI capability would capture this self-reinforcing dynamic.
 - **Aggregate, not sectoral, bottleneck**: The physical bottleneck γ imposes economy-wide diminishing returns to capital, but the model still doesn't capture *sector-level* heterogeneity in automation difficulty (the full Baumol / Aghion-Jones-Jones mechanism, where slow-to-automate sectors come to dominate value added).

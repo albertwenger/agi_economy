@@ -188,14 +188,56 @@ test("flat-UBI mode: matches indexed NIT at period 0, then fades as growth outru
 
   // The funding rate collapses as the economy outgrows the fixed payment...
   assert.ok(flat[T_PERIODS].tau < 1e-3, `tau_T = ${flat[T_PERIODS].tau}`);
-  // ...so the end state is laissez-faire, while the indexed NIT keeps compressing
-  assert.ok(Math.abs(flat[T_PERIODS].giniPost - none[T_PERIODS].giniPost) < 0.02);
+  // ...so the end state is near laissez-faire, while the indexed NIT keeps compressing
+  assert.ok(Math.abs(flat[T_PERIODS].giniPost - none[T_PERIODS].giniPost) < 0.05);
   assert.ok(indexed[T_PERIODS].giniPost < 0.3);
   assert.ok(indexed[T_PERIODS].d1Post > 100 * flat[T_PERIODS].d1Post,
     "indexed transfers leave the bottom decile orders of magnitude better off");
 
   // Indexed mode reports its constant rate in tau for UI consumption
   assert.ok(indexed.every(h => h.tau === 0.4));
+});
+
+// ── Markup pass-through dynamics ──
+
+test("pass-through: market power keeps productivity gains as profit, competition forces them into prices", () => {
+  // equilibrium level: with a 50x productivity gain over the reference zRef,
+  // the monopolist's markup scales ~50x while high-N markups barely move
+  const args = (N, K) => [0.6, 1.5, N, 0, 1, K, equalFracs, 0.9];
+  const ref = equilibrium(...args(1, 1));
+  const muAt = N => {
+    const e0 = equilibrium(...args(N, 1));
+    // raise A instead of K to move TFP: recompute with A scaled 50x
+    const e1 = equilibrium(0.6, 1.5, N, 0, 50, 1, equalFracs, 0.9, e0.productivity);
+    return { mu0: e0.mu, mu1: e1.mu, zRatio: e1.productivity / e0.productivity };
+  };
+  const mono = muAt(1), comp = muAt(50);
+  approx(mono.mu1, mono.mu0 * mono.zRatio, 1e-6);          // N=1: all gains -> markup
+  assert.ok(comp.mu1 / comp.mu0 < Math.pow(comp.zRatio, 0.05)); // N=50: near-full pass-through
+  assert.ok(ref.mu > 1);
+
+  // path level: under monopoly the actual price NEVER falls; under competition
+  // it tracks the competitive (marginal-cost) price down
+  const base = { alphaTarget: 0.9, sigma: 1.8, t: 0, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.9 };
+  const hm = simulate({ ...base, N: 1 });
+  const hc = simulate({ ...base, N: 50 });
+  approx(hm[T_PERIODS].priceActual, hm[0].priceActual, 0.02);
+  assert.ok(hc[T_PERIODS].priceActual < 0.05 * hc[0].priceActual);
+  assert.ok(hc[T_PERIODS].priceActual / hc[T_PERIODS].priceComp < 1.2, "competitive price ≈ marginal cost");
+});
+
+test("pass-through: a flat (nominal) UBI is only effective under competition", () => {
+  const base = { alphaTarget: 0.9, sigma: 1.8, t: 0.4, theta: 3.5, gA: 0.08, savingsSpread: 2.5, gamma: 0.9, transferMode: "flat" };
+  const mono = simulate({ ...base, N: 1 });
+  const comp = simulate({ ...base, N: 30 });
+  const realUBI = h => h.tau * h.Y / N_DECILES;
+
+  // Monopoly: prices never fall, so the nominal UBI's real value stays frozen
+  approx(realUBI(mono[T_PERIODS]), realUBI(mono[0]), 0.05);
+  // Competition: the same UBI buys vastly more as prices collapse
+  assert.ok(realUBI(comp[T_PERIODS]) > 20 * realUBI(comp[0]));
+  // Net effect on the bottom decile: competition is what makes the flat UBI work
+  assert.ok(comp[T_PERIODS].d1Post > 1000 * mono[T_PERIODS].d1Post);
 });
 
 // ── The thesis: 2×2 policy grid ──
